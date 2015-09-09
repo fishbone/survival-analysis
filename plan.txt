@@ -8,4 +8,4 @@
   3. models:
     a.) global const
     b.) user-specific const
-    c.) Piecewise-constant function
+    c.) Piecewise-const function
