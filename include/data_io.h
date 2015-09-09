@@ -5,5 +5,5 @@
 int read_data(const char* dirtemp,
               const char* start_day,
               const char* end_day,
-              UserArray &data);
+              UserContainer &data);
 #endif

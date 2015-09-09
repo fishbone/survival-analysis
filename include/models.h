@@ -3,7 +3,7 @@
 #include "user.h"
 class ModelBase {
   public:
-    virtual int train(UserArray &data) = 0;
+    virtual int train(UserContainer &data) = 0;
 };
 
 #endif
