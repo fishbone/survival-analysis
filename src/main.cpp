@@ -26,7 +26,7 @@ int main(){
     train_data.reserve(10000000);
     read_data("/home/yicheng1/survival-analysis/data/user_survive/daily/show_read_stay.%s",
               "20150703",
-              "20150703",
+              "20150705",
               train_data);
     ModelBase *model = new ModelTest();
     model->train(train_data);
