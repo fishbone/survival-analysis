@@ -1,0 +1,11 @@
+09/08 - 09/13
+  1. understand data:
+    a.) histogram of survival time
+    b.) histogram of stay time
+  2. code framework:
+    a.) data reading
+    b.) model interface
+  3. models:
+    a.) global const
+    b.) user-specific const
+    c.) Piecewise-const function
