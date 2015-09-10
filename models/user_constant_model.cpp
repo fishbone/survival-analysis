@@ -31,6 +31,9 @@ int UserConstantModel::train(const UserContainer *data){
 long UserConstantModel::predict(long uid){
   return 0;   
 }
+const char * UserConstantModel::modelName(){
+  return "UserConstantModel";    
+}
 int main(){
     UserContainer train_data;
     train_data.reserve(10000000);

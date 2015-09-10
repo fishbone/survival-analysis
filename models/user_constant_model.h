@@ -7,6 +7,7 @@
 class UserConstantModel : public ModelBase{
     public:
         int train(const UserContainer *data);
+        const char *modelName();
         long predict(long uid);
         typedef std::unordered_map<long, double> LambdaU;
         LambdaU lambda_u;
