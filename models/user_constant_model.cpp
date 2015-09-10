@@ -4,6 +4,7 @@
 using namespace std;
 
 int UserConstantModel::train(const UserContainer *data){
+    _data = data;
     for(auto iter = data->begin();
             iter != data->end(); ++iter){
         long total_time = 0;
@@ -29,8 +30,13 @@ int UserConstantModel::train(const UserContainer *data){
     return 0;
 }
 long UserConstantModel::predict(long uid){
-  return 0;   
+    auto ite = _data->find(uid);
+    if(ite == _data->end()){
+        return -1;
+    }else{
+        return ite->second.get_sessions().back().end + (1/(lambda_u[uid]));
+    }
 }
 const char * UserConstantModel::modelName(){
-  return "UserConstantModel";    
+    return "user_constant_model";    
 }

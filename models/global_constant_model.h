@@ -1,5 +1,5 @@
-#ifndef __RATE_FUNC_MODEL_H
-#define __RATE_FUNC_MODEL_H
+#ifndef __GLOBAL_CONSTANT_MODEL_H__
+#define __GLOBAL_CONSTANT_MODEL_H__
 #include "data_io.h"
 #include "model_base.h"
 #include <iostream>

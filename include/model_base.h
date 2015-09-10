@@ -11,6 +11,8 @@ class ModelBase {
     virtual const char *modelName() = 0;
     virtual int train(const UserContainer *data) = 0;
     virtual PredictRes predict(long uid) = 0;
+
+  public:
     void batchPredict(const UserContainer *data,
                       std::vector<std::tuple<long, ModelBase::PredictRes> > &result){
         result.clear();
@@ -30,6 +32,7 @@ class ModelBase {
         return res >= 0;
     }
 };
+
 class EvaluationBase {
   public:
     static EvaluationBase *makeEval(const char* eval_name);

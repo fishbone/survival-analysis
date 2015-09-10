@@ -2,13 +2,17 @@
 #include "model_test.h"
 #include "eval_test.h"
 #include "global_constant_model.h"
+#include "user_constant_model.h"
 #include <string>
+
 ModelBase *ModelBase::makeModel(const char *model_name){
     std::string name = model_name;
     if(name == "model_test"){
         return new ModelTest();
     }else if(name == "global_constant_model"){
         return new GlobalConstantModel();
+    }else if(name == "user_constant_model"){
+        return new UserConstantModel();
     }
     return nullptr;
 }
