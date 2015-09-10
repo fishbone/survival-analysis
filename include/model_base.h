@@ -3,6 +3,7 @@
 #include "user.h"
 class ModelBase {
   public:
+    virtual const char *modelName() = 0;
     virtual int train(const UserContainer *data) = 0;
     virtual long predict(long uid) = 0;
 };
