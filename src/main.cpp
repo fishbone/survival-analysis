@@ -5,6 +5,10 @@ using namespace std;
 
 class ModelTest : public ModelBase{
   public:
+    virtual const char *modelName(){
+	return "model_test";
+    }
+
     virtual long predict(long uid){
         return 0;
     }
