@@ -34,20 +34,3 @@ long UserConstantModel::predict(long uid){
 const char * UserConstantModel::modelName(){
   return "UserConstantModel";    
 }
-int main(){
-    UserContainer train_data;
-    train_data.reserve(10000000);
-    read_data("/home/yicheng1/survival-analysis/data/user_survive/daily/show_read_stay.%s",
-            "20150703",
-            "20150705",
-            train_data);
-    UserConstantModel *model = new UserConstantModel();
-    model->train(&train_data);
-    UserConstantModel::LambdaU &lambda_u = model->lambda_u;
-    for(auto iter = lambda_u.begin();
-            iter != lambda_u.end(); ++iter){
-        cout<<endl<<"User_id="<<iter->first;
-        cout<<"\tlambda_u:"<<iter->second<<endl;
-    }
-    return 0;
-}

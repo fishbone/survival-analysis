@@ -5,10 +5,12 @@
 #include <iostream>
 
 class GlobalConstantModel : public ModelBase{
-    public:
-        int train(const UserContainer *data);
-        const char *modelName();
-        long predict(long uid);
-        double lambda;
+  public:
+    int train(const UserContainer *data);
+    const char *modelName();
+    long predict(long uid);
+    double lambda;
+  private:
+    const UserContainer *_data;
 };
 #endif

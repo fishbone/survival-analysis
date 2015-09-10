@@ -1,43 +1,138 @@
+#include <iostream>
+#include <boost/program_options.hpp>
+#include <string>
 #include "data_io.h"
 #include "model_base.h"
-#include <iostream>
 using namespace std;
+using namespace boost::program_options;
 
-class ModelTest : public ModelBase{
-  public:
-    virtual const char *modelName(){
-	return "model_test";
-    }
 
-    virtual long predict(long uid){
-        return 0;
-    }
-    virtual int train(const UserContainer *data){
-        train_data = data;
-        for(auto iter = data->begin();
-            iter != data->end(); ++iter){
-            cout<<"User_id="<<iter->first<<endl;
-            cout<<"Session:"<<endl;
-            for(auto j = iter->second.get_sessions().begin();
-                j != iter->second.get_sessions().end();
-                ++j){
-                cout<<j->start<<"\t"<<j->end<<endl;
-            }
+void print_help(boost::program_options::options_description &desc){
+    cerr<<"Usage: prog_name [options]"<<endl;
+    cerr<<endl;
+    cerr<<desc<<endl;
+}
+
+
+bool parse_param(int argc, char *argv[], variables_map &vm){
+    options_description desc("Options");
+    desc.add_options()
+            ("models", value<std::vector<std::string> >()->multitoken()->required(), "The models to be trained with")
+            ("evaluations", value<std::vector<std::string> >()->multitoken()->required(), "The evaluation algorithms to be calculated")
+            ("train_start", value<std::string>()->required(), "The start date of the data for training")
+            ("train_end", value<std::string>()->required(), "The end date of the data for training")
+            ("test_start", value<std::string>()->required(), "The start date of the data for testing")
+            ("test_end", value<std::string>()->required(), "The end date of the data for testing")
+            ("data_template", value<std::string>()->required(), "The template of the directory for the data")
+            ("help", "produce help message");
+    
+    try{
+        store(parse_command_line(argc, argv, desc), vm);
+        notify(vm);
+    }catch(exception &e){
+        if(vm.count("help")){
+            print_help(desc);
+        }else{
+            cerr<<e.what()<<endl;
         }
-        return 0;
+        return false;
     }
-  private:
-    const UserContainer *train_data;
-};
+    if(vm.count("help")){
+        print_help(desc);
+        return false;
+    }
+    return true;
+}
+void load_evals(const std::vector<std::string> &eval_name,
+                std::vector<EvaluationBase*> &evals){
+    for(auto i : eval_name){
+        EvaluationBase *e = EvaluationBase::makeEval(i.c_str());
+        if(nullptr == e){
+            cerr<<"Evaluation: "<<i<<" doesn't exist!!!!!"<<endl;
+        }else{
+            evals.push_back(e);
+            cout<<"Loaded eval "<<e->evalName()<<endl;
+        }
+    }
+}
+void load_models(const std::vector<std::string> &models_name,
+                 std::vector<ModelBase*> &models){
+    for(auto i : models_name){
+        ModelBase *m = ModelBase::makeModel(i.c_str());
+        if(nullptr == m){
+            cerr<<"Model: "<<i<<" doesn't exist!!!!!"<<endl;
+        }else{
+            models.push_back(m);
+            cout<<"Loaded model "<<m->modelName()<<endl;
+        }
+    }
+}
+void train_models(
+    UserContainer *data,
+    std::vector<ModelBase*>& models){
+    for(auto i : models){
+        cerr<<"Training model: "<<i->modelName()<<endl;
+        i->train(data);
+    }
+}
+void test_models(
+    UserContainer *data,
+    std::vector<ModelBase*> &models,
+    std::vector<EvaluationBase*> &evals){
+    for(auto m : models){
+        std::vector<std::tuple<long, ModelBase::PredictRes> > result;
+        m->batchPredict(data, result);
+        for(auto e : evals){
+            cout<<"Model="
+                <<m->modelName()
+                <<"\tEval="<<e->evalName()
+                <<"\tResult="<<e->doEval(data, result)<<endl;
+        }
+    }
+}
 
-int main(){
+int main(int argc, char *argv[]){
+    variables_map vm;
+    if(!parse_param(argc, argv, vm)){
+        return -1;
+    }
+
     UserContainer train_data;
     train_data.reserve(10000000);
-    read_data("/home/yicheng1/survival-analysis/data/user_survive/daily/show_read_stay.%s",
-              "20150703",
-              "20150705",
+    cerr<<"Reading data for training dataset"<<endl;
+    read_data(vm["data_template"].as<std::string>().c_str(),
+              vm["train_start"].as<std::string>().c_str(),
+              vm["train_end"].as<std::string>().c_str(),
               train_data);
-    ModelBase *model = new ModelTest();
-    model->train(&train_data);
+
+    UserContainer test_data;
+    test_data.reserve(10000000);
+    cerr<<"Reading data for testing dataset"<<endl;
+    read_data(vm["data_template"].as<std::string>().c_str(),
+              vm["test_start"].as<std::string>().c_str(),
+              vm["test_end"].as<std::string>().c_str(),
+              test_data);
+
+    std::vector<ModelBase*> models;
+    load_models(vm["models"].as<std::vector<std::string> >(),
+                models);
+    if(0 == models.size()){
+        cerr<<"Please give at least one model to do training"<<endl;
+        return -1;
+    }
+
+    std::vector<EvaluationBase*> evals;
+    load_evals(vm["evaluations"].as<std::vector<std::string> >(),
+               evals);
+
+    if(0 == evals.size()){
+        cerr<<"Please give at least one evaluation to do testing"<<endl;
+        return -1;
+    }
+    cerr<<"Start to train models"<<endl;
+    train_models(&train_data, models);
+
+    test_models(&test_data, models, evals);
+    
     return 0;
 }

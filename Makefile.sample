@@ -1,9 +1,10 @@
 CXX=g++
-CFLAGS=-std=c++11 -msse2 -Wall -finline-functions
-LDFLAGS=-lboost_date_time -lboost_system -lboost_filesystem
+CFLAGS=-std=c++11 -msse2 -Wall -finline-functions -O3
+LDFLAGS=-lboost_date_time -lboost_system -lboost_filesystem -lboost_program_options
 #LDFLAGS=-lglog -lprotobuf -lprotoc -lzmq -llz4 -lcityhash 
 # test-model: models/test-model.cpp $(PS_LIB) $(PS_MAIN)
 # 	$(CXX) $(CFLAGS) $(LDFLAGS) -fopenmp $^ -o $@
-INC=-I./include
-main: src/main.cpp src/data_io.cpp
+INC=-I./include -I./models
+src = $(wildcard src/*.cpp) $(wildcard models/*.cpp)
+main: $(src)
 	$(CXX) $(CFLAGS) $(LDFLAGS) $(INC) $^ -o $@

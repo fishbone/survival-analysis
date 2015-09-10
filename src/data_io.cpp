@@ -29,16 +29,6 @@ static int read_data_from_file(
         }
         int uid_type, read_date, read, stay_time;
         long uid, impr_time, group_id;
-        /*
-        std::vector<std::string> split_result;
-        boost::split(split_result, s, boost::is_any_of("\t"));
-        if(split_result.size() != 7){
-        }
-
-        uid = atol(split_result[0].c_str());
-        impr_time = atol(split_result[4].c_str());
-        */
-        // uid, uid_type, date, group_id, impr_time, read, stay_time
         int r_num = sscanf(s.c_str(),
                            "%ld\t%d\t%d\t%ld\t%ld\t%d\t%d",
                            &uid, &uid_type, &read_date, &group_id, &impr_time, &read, &stay_time);
@@ -49,9 +39,9 @@ static int read_data_from_file(
         data[uid].add_impr(impr_time);
         ++count;
     }
-    std::cerr<<"\nReading: "<<filename<<
+    std::cerr<<"\rReading: "<<filename<<
             "\tLoadFactor:"<<data.load_factor()<<
-            "\t"<<count;
+            "\t"<<count<<std::endl;
 
     return 0;
 }

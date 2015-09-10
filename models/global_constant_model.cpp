@@ -5,7 +5,8 @@ using namespace std;
 
 int GlobalConstantModel::train(const UserContainer *data){
     long total_time = 0;
-    double session_num = 0; 
+    double session_num = 0;
+    _data = data;
     for(auto iter = data->begin();
         iter != data->end(); ++iter){
         int index = 0;
@@ -29,25 +30,15 @@ int GlobalConstantModel::train(const UserContainer *data){
 }
 
 long GlobalConstantModel::predict(long uid){
-    return (1/lambda);
+    auto ite = _data->find(uid);
+    if(ite == _data->end()){
+        return -1;
+    }else{
+        return ite->second.get_sessions().back().end + (1/lambda);
+    }
 }
 
 const char *GlobalConstantModel::modelName(){
     return "global_constant_model";
 }	
 
-int main(){
-    UserContainer train_data;
-    train_data.reserve(10000000);
-    read_data("/home/yicheng1/survival-analysis/data/user_survive/daily/show_read_stay.%s",
-              "20150703",
-              "20150705",
-              train_data);
-    GlobalConstantModel *model = new GlobalConstantModel();
-    model->train(&train_data);
-    double lambda = model->lambda;
-    cout<<endl<<"lambda: "<<lambda<<endl;
-    cout<<"predict-------"<<endl<<"userid: 1234567 return time:"<<model->predict(1234567)<<endl;
- 
-    return 0;
-}
