@@ -1,13 +1,17 @@
 #include "data_io.h"
-#include "models.h"
+#include "model_base.h"
 #include <iostream>
 using namespace std;
 
 class ModelTest : public ModelBase{
   public:
-    virtual int train(UserContainer &data){
-        for(auto iter = data.begin();
-            iter != data.end(); ++iter){
+    virtual long predict(long uid){
+        return 0;
+    }
+    virtual int train(const UserContainer *data){
+        train_data = data;
+        for(auto iter = data->begin();
+            iter != data->end(); ++iter){
             cout<<"User_id="<<iter->first<<endl;
             cout<<"Session:"<<endl;
             for(auto j = iter->second.get_sessions().begin();
@@ -19,6 +23,7 @@ class ModelTest : public ModelBase{
         return 0;
     }
   private:
+    const UserContainer *train_data;
 };
 
 int main(){
@@ -29,6 +34,6 @@ int main(){
               "20150705",
               train_data);
     ModelBase *model = new ModelTest();
-    model->train(train_data);
+    model->train(&train_data);
     return 0;
 }
