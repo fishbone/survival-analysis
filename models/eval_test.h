@@ -19,14 +19,14 @@ class EvalTest : public EvaluationBase {
             if(sessions.size() == 0){
                 continue;
             }
-            dis += abs(sessions[0].start - std::get<1>(i));
+            dis += abs(sessions[0].start.seconds() - std::get<1>(i));
             ++count;
         }
         if(count == 0)
             return "??";
 
         std::stringstream ss;
-        ss<<"AverDis="<<(dis / count);
+        ss<<"TestNum="<<count<<"\tAverDis="<<(dis / count);
         return ss.str();
     }
 };

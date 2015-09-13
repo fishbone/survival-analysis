@@ -3,9 +3,24 @@
 #include <vector>
 #include <unordered_map>
 #include "comm.h"
+#include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
+struct Time {
+  public:
+    Time(long t):_time(t){}
+    long day() const{
+        return _time / 60 / 60 / 24;
+    }
+    long seconds() const{
+        return _time;
+    }
+  private:
+    long _time;
+    friend class User;
+};
 struct Session {
-    long start;
-    long end;
+    Time start;
+    Time end;
 };
 
 class User {
@@ -18,16 +33,16 @@ class User {
     }
     void add_impr(long t){
         if(same_session(t)){
-            _visit_session.back().end = t;
+            _visit_session.back().end._time = t;
         }else{
-            _visit_session.push_back({t, t});
+            _visit_session.push_back({Time(t), Time(t)});
         }
     }
   private:
     bool same_session(long t){
         if(_visit_session.empty())
             return false;
-        if(_visit_session.back().end + SESSION_MAX_STOP > t){
+        if(_visit_session.back().end._time + SESSION_MAX_STOP > t){
             return true;
         }
         return false;

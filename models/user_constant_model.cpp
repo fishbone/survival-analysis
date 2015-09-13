@@ -17,10 +17,10 @@ int UserConstantModel::train(const UserContainer *data){
                 ++j){
             if (index == 0){
                 index++;
-                prev_time = j->end;
+                prev_time = j->end.seconds();
             } else{
-                total_time += (j->start - prev_time);
-                prev_time = j->end;
+                total_time += (j->start.seconds() - prev_time);
+                prev_time = j->end.seconds();
                 session_num ++;
             }
         }
@@ -34,7 +34,7 @@ long UserConstantModel::predict(long uid){
     if(ite == _data->end()){
         return -1;
     }else{
-        return ite->second.get_sessions().back().end + (1/(lambda_u[uid]));
+        return ite->second.get_sessions().back().end.seconds() + (1/(lambda_u[uid]));
     }
 }
 const char * UserConstantModel::modelName(){

@@ -82,11 +82,12 @@ void test_models(
     for(auto m : models){
         std::vector<std::tuple<long, ModelBase::PredictRes> > result;
         m->batchPredict(data, result);
+        cout<<"DEBUG="<<result.size()<<endl;
         for(auto e : evals){
             cout<<"Model="
                 <<m->modelName()
                 <<"\tEval="<<e->evalName()
-                <<"\tResult="<<e->doEval(data, result)<<endl;
+                <<"\tResult=["<<e->doEval(data, result)<<"]"<<endl;
         }
     }
 }
