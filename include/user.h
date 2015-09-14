@@ -22,6 +22,9 @@ struct Time {
     long seconds() const{
         return (_time - _time_t_epoch).total_seconds();
     }
+    double hours() const {
+        return seconds() / 60.0 / 60.0;
+    }
     void setTime(long t){
         _time = boost::posix_time::from_time_t(t);        
     }
