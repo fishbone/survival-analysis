@@ -3,20 +3,31 @@
 #include <vector>
 #include <unordered_map>
 #include "comm.h"
+#include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 struct Time {
   public:
-    Time(long t):_time(t){}
-    long day() const{
-        return _time / 60 / 60 / 24;
+    Time(long t){
+        setTime(t);
     }
+    int dayOfMonth() const {
+        return _time.date().day();
+    }
+
+    int dayOfWeek() const {
+        return _time.date().day_of_week();
+    }
+    
     long seconds() const{
-        return _time;
+        return (_time - _time_t_epoch).total_seconds();
+    }
+    void setTime(long t){
+        _time = boost::posix_time::from_time_t(t);        
     }
   private:
-    long _time;
-    friend class User;
+    boost::posix_time::ptime _time;
+    static const boost::posix_time::ptime _time_t_epoch;
 };
 struct Session {
     Time start;
@@ -33,7 +44,7 @@ class User {
     }
     void add_impr(long t){
         if(same_session(t)){
-            _visit_session.back().end._time = t;
+            _visit_session.back().end.setTime(t);
         }else{
             _visit_session.push_back({Time(t), Time(t)});
         }
@@ -42,7 +53,7 @@ class User {
     bool same_session(long t){
         if(_visit_session.empty())
             return false;
-        if(_visit_session.back().end._time + SESSION_MAX_STOP > t){
+        if(_visit_session.back().end.seconds() + SESSION_MAX_STOP > t){
             return true;
         }
         return false;
