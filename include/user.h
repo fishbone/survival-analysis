@@ -11,6 +11,9 @@ struct Time {
     Time(long t){
         setTime(t);
     }
+    int dayOfYear() const {
+        return _time.date().day_of_year();
+    }
     int dayOfMonth() const {
         return _time.date().day();
     }
