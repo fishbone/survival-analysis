@@ -9,6 +9,7 @@
 struct Time {
   public:
     Time(long t){
+        t += 8 * 60 * 60;
         setTime(t);
     }
     int dayOfYear() const {
