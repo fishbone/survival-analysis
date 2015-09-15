@@ -17,13 +17,14 @@ struct Time {
     int dayOfMonth() const {
         return _time.date().day();
     }
-
     int dayOfWeek() const {
         return _time.date().day_of_week();
     }
-    
     long seconds() const{
         return (_time - _time_t_epoch).total_seconds();
+    }
+    double hourOfDay() const {
+        return (seconds() % (24 * 60 * 60)) / (60.0 * 60.0);
     }
     double hours() const {
         return seconds() / 60.0 / 60.0;
