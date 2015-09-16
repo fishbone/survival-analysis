@@ -29,12 +29,14 @@ int GlobalConstantModel::train(const UserContainer *data){
     return 0;
 }
 
-long GlobalConstantModel::predict(long uid){
-    auto ite = _data->find(uid);
+ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
+    auto ite = _data->find(user.id());
     if(ite == _data->end()){
-        return -1;
+        return PredictRes(-1, 0.0, false);
     }else{
-        return ite->second.get_sessions().back().end.seconds() + (1/lambda);
+        return PredictRes(ite->second.get_sessions().back().end.seconds() + (1/lambda),
+                          0.0,
+                          true);
     }
 }
 

@@ -5,13 +5,19 @@
 #include "user.h"
 class ModelBase {
   public:
-    typedef long PredictRes;
+    struct PredictRes{
+        PredictRes(long n, double p, bool v):next_visit(n),
+                                             perplexity(p),
+                                             valid(v){}
+        long next_visit;
+        double perplexity;
+        bool valid;
+    };
     static ModelBase *makeModel(const char* model_name);
   public:
     virtual const char *modelName() = 0;
     virtual int train(const UserContainer *data) = 0;
-    virtual PredictRes predict(long uid) = 0;
-
+    virtual PredictRes predict(const User &user) = 0;
   public:
     void batchPredict(const UserContainer *data,
                       std::vector<std::tuple<long, ModelBase::PredictRes> > &result){
@@ -19,17 +25,13 @@ class ModelBase {
         for(auto iter = data->begin();
             iter != data->end();
             ++iter){
-            PredictRes res = predict(iter->first);
-            if(res >= 0){
+            PredictRes res = predict(iter->second);
+            if(res.valid){
                 result.push_back(std::make_tuple(
                     iter->first,
                     res));
             }
         }
-    }
-  private:
-    bool valid(const PredictRes &res){
-        return res >= 0;
     }
 };
 

@@ -3,6 +3,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <string>
+#include <utility>
 #include <chrono>
 #include <ctime>
 #include <iostream>
@@ -35,6 +36,9 @@ static int read_data_from_file(
         if(r_num != 7){
             std::cerr<<"Error: "<<s<<std::endl;
             continue;
+        }
+        if(!data.count(uid)){
+            data.insert(std::make_pair(uid, User(uid)));
         }
         data[uid].add_impr(impr_time);
         ++count;

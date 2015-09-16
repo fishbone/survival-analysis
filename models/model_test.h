@@ -6,8 +6,8 @@ class ModelTest : public ModelBase {
 	return "model_test";
     }
 
-    virtual long predict(long uid){
-        return 0;
+    virtual PredictRes predict(const User &user){
+        return PredictRes(0, 0, false);
     }
     virtual int train(const UserContainer *data){
         train_data = data;

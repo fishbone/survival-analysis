@@ -5,13 +5,13 @@
 #include <iostream>
 
 class UserConstantModel : public ModelBase{
-    public:
-        int train(const UserContainer *data);
-        const char *modelName();
-        long predict(long uid);
-        typedef std::unordered_map<long, double> LambdaU;
+  public:
+    int train(const UserContainer *data);
+    const char *modelName();
+    PredictRes predict(const User &user);
+    typedef std::unordered_map<long, double> LambdaU;
   private:
     const UserContainer *_data;
-        LambdaU lambda_u;
+    LambdaU lambda_u;
 };
 #endif

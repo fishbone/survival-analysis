@@ -29,12 +29,15 @@ int UserConstantModel::train(const UserContainer *data){
     }
     return 0;
 }
-long UserConstantModel::predict(long uid){
-    auto ite = _data->find(uid);
+ModelBase::PredictRes UserConstantModel::predict(const User &user){
+    auto ite = _data->find(user.id());
     if(ite == _data->end()){
-        return -1;
+        return ModelBase::PredictRes(-1, 0, false);
     }else{
-        return ite->second.get_sessions().back().end.seconds() + (1/(lambda_u[uid]));
+        return ModelBase::PredictRes(
+            ite->second.get_sessions().back().end.seconds() + (1/(lambda_u[user.id()])),
+            0,
+            true);
     }
 }
 const char * UserConstantModel::modelName(){

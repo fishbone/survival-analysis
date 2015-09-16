@@ -8,7 +8,7 @@ class GlobalConstantModel : public ModelBase{
   public:
     int train(const UserContainer *data);
     const char *modelName();
-    long predict(long uid);
+    PredictRes predict(const User &user);
     double lambda;
   private:
     const UserContainer *_data;

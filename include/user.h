@@ -44,6 +44,8 @@ struct Session {
 
 class User {
   public:
+    User(){}
+    User(long uid):user_id(uid){}
     const std::vector<Session> &get_sessions() const{
         return _visit_session;
     }
