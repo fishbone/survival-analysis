@@ -39,6 +39,12 @@ struct Time {
 };
 
 struct Session {
+    int binFromLastSession(){
+        if(lastSession == nullptr){
+            return -1;
+        }
+        return int((start.hours() - lastSession->end.hours()) / BIN_WIDTH);
+    }
     Session(Time s, Time e, Session *p):
             start(s),
             end(e),
