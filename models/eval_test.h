@@ -19,7 +19,7 @@ class EvalTest : public EvaluationBase {
             if(sessions.size() == 0){
                 continue;
             }
-            dis += abs(sessions[0].start.seconds() - std::get<1>(i).next_visit);
+            dis += abs(sessions[0].start.hours() - std::get<1>(i).next_visit);
             ++count;
         }
         if(count == 0)

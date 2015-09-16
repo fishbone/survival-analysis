@@ -9,7 +9,6 @@
 struct Time {
   public:
     Time(long t){
-        t += 8 * 60 * 60;
         setTime(t);
     }
     int dayOfYear() const {
@@ -21,9 +20,6 @@ struct Time {
     int dayOfWeek() const {
         return _time.date().day_of_week();
     }
-    long seconds() const{
-        return (_time - _time_t_epoch).total_seconds();
-    }
     double hourOfDay() const {
         return (seconds() % (24 * 60 * 60)) / (60.0 * 60.0);
     }
@@ -34,12 +30,22 @@ struct Time {
         _time = boost::posix_time::from_time_t(t);        
     }
   private:
+    long seconds() const{
+        return (_time - _time_t_epoch).total_seconds();
+    }
     boost::posix_time::ptime _time;
     static const boost::posix_time::ptime _time_t_epoch;
+    friend class User;
 };
+
 struct Session {
+    Session(Time s, Time e, Session *p):
+            start(s),
+            end(e),
+            lastSession(p){}
     Time start;
     Time end;
+    Session *lastSession;
 };
 
 class User {
@@ -56,7 +62,8 @@ class User {
         if(same_session(t)){
             _visit_session.back().end.setTime(t);
         }else{
-            _visit_session.push_back({Time(t), Time(t)});
+            Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
+            _visit_session.push_back({Time(t), Time(t), p});
         }
     }
   private:

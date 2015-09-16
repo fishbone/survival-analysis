@@ -33,6 +33,9 @@ static int read_data_from_file(
         int r_num = sscanf(s.c_str(),
                            "%ld\t%d\t%d\t%ld\t%ld\t%d\t%d",
                            &uid, &uid_type, &read_date, &group_id, &impr_time, &read, &stay_time);
+        // UTC -> Chine time
+        impr_time += 8 * 60 * 60;
+
         if(r_num != 7){
             std::cerr<<"Error: "<<s<<std::endl;
             continue;

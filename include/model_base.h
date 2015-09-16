@@ -7,10 +7,10 @@ class ModelBase {
   public:
     struct PredictRes{
         PredictRes(long n, double p, bool v):next_visit(n),
-                                             perplexity(p),
+                                             loglikelihood(p),
                                              valid(v){}
         long next_visit;
-        double perplexity;
+        double loglikelihood;
         bool valid;
     };
     static ModelBase *makeModel(const char* model_name);

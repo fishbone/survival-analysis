@@ -4,23 +4,23 @@
 using namespace std;
 
 int GlobalConstantModel::train(const UserContainer *data){
-    long total_time = 0;
+    double total_time = 0;
     double session_num = 0;
     _data = data;
     for(auto iter = data->begin();
         iter != data->end(); ++iter){
         int index = 0;
-        int prev_time = -1;
+        double prev_time = -1;
 
         for (auto j = iter->second.get_sessions().begin();
              j!= iter->second.get_sessions().end();
              ++j){
             if (index == 0){
                 index++;
-                prev_time = j->end.seconds();
+                prev_time = j->end.hours();
             } else{
-                total_time += (j->start.seconds() - prev_time);
-                prev_time = j->end.seconds();
+                total_time += (j->start.hours() - prev_time);
+                prev_time = j->end.hours();
                 session_num ++;
             }
         }
@@ -34,7 +34,7 @@ ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
     if(ite == _data->end()){
         return PredictRes(-1, 0.0, false);
     }else{
-        return PredictRes(ite->second.get_sessions().back().end.seconds() + (1/lambda),
+        return PredictRes(ite->second.get_sessions().back().end.hours() + (1/lambda),
                           0.0,
                           true);
     }

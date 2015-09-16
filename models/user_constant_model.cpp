@@ -7,20 +7,20 @@ int UserConstantModel::train(const UserContainer *data){
     _data = data;
     for(auto iter = data->begin();
             iter != data->end(); ++iter){
-        long total_time = 0;
+        double total_time = 0;
         double session_num = 0;
         int index = 0;
-        int prev_time = -1;
+        double prev_time = -1;
 
         for (auto j = iter->second.get_sessions().begin();
                 j!= iter->second.get_sessions().end();
                 ++j){
             if (index == 0){
                 index++;
-                prev_time = j->end.seconds();
+                prev_time = j->end.hours();
             } else{
-                total_time += (j->start.seconds() - prev_time);
-                prev_time = j->end.seconds();
+                total_time += (j->start.hours() - prev_time);
+                prev_time = j->end.hours();
                 session_num ++;
             }
         }
@@ -35,7 +35,7 @@ ModelBase::PredictRes UserConstantModel::predict(const User &user){
         return ModelBase::PredictRes(-1, 0, false);
     }else{
         return ModelBase::PredictRes(
-            ite->second.get_sessions().back().end.seconds() + (1/(lambda_u[user.id()])),
+            ite->second.get_sessions().back().end.hours() + (1/(lambda_u[user.id()])),
             0,
             true);
     }
