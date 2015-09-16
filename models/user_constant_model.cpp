@@ -24,14 +24,16 @@ int UserConstantModel::train(const UserContainer *data){
                 session_num ++;
             }
         }
-        double avg = session_num / total_time;
-        lambda_u.insert(make_pair(iter->first, avg));
+        if(total_time != 0){
+            double avg = session_num / total_time;
+            lambda_u.insert(make_pair(iter->first, avg));
+        }
     }
     return 0;
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){
     auto ite = _data->find(user.id());
-    if(ite == _data->end()){
+    if(ite == _data->end() || !lambda_u.count(user.id())){
         return ModelBase::PredictRes(-1, 0, false);
     }else{
         return ModelBase::PredictRes(
