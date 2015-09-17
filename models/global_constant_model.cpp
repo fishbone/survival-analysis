@@ -6,7 +6,7 @@ using namespace std;
 int GlobalConstantModel::train(const UserContainer *data){
     double total_time = 0;
     double session_num = 0;
-    _data = data;
+    _user_train = data;
     for(auto iter = data->begin();
         iter != data->end(); ++iter){
         int index = 0;
@@ -30,12 +30,26 @@ int GlobalConstantModel::train(const UserContainer *data){
 }
 
 ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
-    auto ite = _data->find(user.id());
-    if(ite == _data->end()){
+    // user here should contain test data sessions
+    auto ite = _user_train->find(user.id());
+    if(ite == _user_train->end() || ite->second.get_sessions().size() <= 1){
         return PredictRes(-1, 0.0, false);
     }else{
-        return PredictRes(ite->second.get_sessions().back().end.hours() + (1/lambda),
-                          0.0,
+        const vector<Session> &train_sessions = ite->second.get_sessions();
+        const vector<Session> &test_sessions = user.get_sessions();
+        double loglik = 0.0;
+        double prev_end = train_sessions.back().end.hours();
+        int num_sessions = (int)test_sessions.size();
+        for(int i = 0 ; i < num_sessions ; i++){
+            // see Alex's note: log lambda_u(t) - \int_0^{cur_start - prev_end} lambda_u(t)
+            double log_density = log(lambda);
+            double normalized = lambda*(test_sessions[i].start.hours() - prev_end);
+            prev_end = test_sessions[i].end.hours();
+            loglik += log_density - normalized;
+        }
+
+        return PredictRes(0,
+                          loglik/num_sessions,
                           true);
     }
 }

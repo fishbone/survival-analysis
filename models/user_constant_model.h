@@ -11,7 +11,7 @@ class UserConstantModel : public ModelBase{
     PredictRes predict(const User &user);
     typedef std::unordered_map<long, double> LambdaU;
   private:
-    const UserContainer *_data;
+    const UserContainer *_user_train;
     LambdaU lambda_u;
 };
 #endif

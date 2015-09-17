@@ -1,6 +1,6 @@
 #include "model_base.h"
 #include "model_test.h"
-#include "eval_test.h"
+#include "eval_loglik.h"
 #include "global_constant_model.h"
 #include "user_constant_model.h"
 #include <string>
@@ -19,8 +19,8 @@ ModelBase *ModelBase::makeModel(const char *model_name){
 
 EvaluationBase *EvaluationBase::makeEval(const char *eval_name){
     std::string name = eval_name;
-    if(name == "eval_test"){
-        return new EvalTest();
+    if(name == "eval_loglik"){
+        return new EvalLoglik();
     }
     return nullptr;
 }

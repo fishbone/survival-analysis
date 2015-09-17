@@ -4,7 +4,7 @@
 using namespace std;
 
 int UserConstantModel::train(const UserContainer *data){
-    _data = data;
+    _user_train = data;
     for(auto iter = data->begin();
             iter != data->end(); ++iter){
         double total_time = 0;
@@ -32,15 +32,27 @@ int UserConstantModel::train(const UserContainer *data){
     return 0;
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){
-    auto ite = _data->find(user.id());
-    if(ite == _data->end() || !lambda_u.count(user.id())){
-        return ModelBase::PredictRes(-1, 0, false);
+    auto ite = _user_train->find(user.id());
+    if(ite == _user_train->end() || !lambda_u.count(user.id())){
+        return PredictRes(-1, 0.0, false);
     }else{
-        return ModelBase::PredictRes(
-            ite->second.get_sessions().back().end.hours() + (1/(lambda_u[user.id()])),
-            0,
-            true);
-    }
+        const vector<Session> &train_sessions = ite->second.get_sessions();
+        const vector<Session> &test_sessions = user.get_sessions();
+        double loglik = 0.0;
+        double prev_end = train_sessions.back().end.hours();
+        double lambda = lambda_u[user.id()];
+        int num_sessions = (int)test_sessions.size();
+        for(int i = 0 ; i < num_sessions ; i++){
+            double log_density = log(lambda);
+            double normalized = lambda*(test_sessions[i].start.hours() - prev_end);
+            prev_end = test_sessions[i].end.hours();
+            loglik += log_density - normalized;
+        }   
+
+        return PredictRes(0,
+                loglik/num_sessions,
+                true);
+    } 
 }
 const char * UserConstantModel::modelName(){
     return "user_constant_model";    
