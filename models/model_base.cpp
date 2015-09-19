@@ -3,6 +3,7 @@
 #include "eval_loglik.h"
 #include "global_constant_model.h"
 #include "user_constant_model.h"
+#include "piecewise_constant_model.h"
 #include <string>
 boost::property_tree::ptree ModelBase::_config;
 ModelBase *ModelBase::makeModel(const char *model_name){
@@ -13,6 +14,8 @@ ModelBase *ModelBase::makeModel(const char *model_name){
         return new GlobalConstantModel();
     }else if(name == "user_constant_model"){
         return new UserConstantModel();
+    }else if(name == "piecewise_constant_model"){
+	return new PiecewiseConstantModel();
     }
     return nullptr;
 }

@@ -6,6 +6,7 @@
 #include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <iostream>
 struct Time {
   public:
     Time(long t){
@@ -44,6 +45,8 @@ struct Session {
             return -1;
         }
         int bin = (start.hours() - lastSession->end.hours()) / BIN_WIDTH;
+	if (bin < 0)
+	    std::cout<<"user.h: "<<start.hours()<<" "<<lastSession->end.hours()<<std::endl;
         if(bin < NUM_BIN){
             return bin;    
         }else{
