@@ -49,11 +49,14 @@ ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
         int num_sessions = (int)test_sessions.size();
         for(int i = 0 ; i < num_sessions ; i++){
 	    int target_bin = test_sessions[i].binFromLastSession();
+	    if (target_bin >= 0) {
 	    double lambda_j = lambda_u[user.id()][target_bin];
             double log_density = log(lambda_j);
             double normalized = lambda_j*(test_sessions[i].start.hours() - prev_end);
             prev_end = test_sessions[i].end.hours();
             loglik += log_density - normalized;
+	    cout<<log_density<<" "<<normalized<<endl;
+	    }
         }   
 
         return PredictRes(0,
