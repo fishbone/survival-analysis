@@ -38,7 +38,7 @@ int HawkesProcessModel::train(const UserContainer *data){
         for(int session_index = 0; session_index != (int)iter->second.get_sessions().size(); 
              session_index++){
               getDerivative(iter->second, session_index);
-              updateParameter(iter->first.id());
+              updateParameter(iter->first);
         }
     }
     return 0;

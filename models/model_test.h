@@ -1,9 +1,13 @@
 #include "model_base.h"
 #include <iostream>
+#include <sstream>
 class ModelTest : public ModelBase {
   public:
     virtual const char *modelName(){
-	return "model_test";
+        ss.clear();
+        double v = _config.get<double>("test.a");
+        ss<<"model_test[v="<<v<<"]";
+	return ss.str().c_str();
     }
 
     virtual PredictRes predict(const User &user){
@@ -24,5 +28,6 @@ class ModelTest : public ModelBase {
         return 0;
     }
   private:
+    std::stringstream ss;
     const UserContainer *train_data;
 };

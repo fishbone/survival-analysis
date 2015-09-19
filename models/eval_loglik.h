@@ -1,3 +1,5 @@
+#ifndef __EVAL_LOGLIK__
+#define __EVAL_LOGLIK__
 #include "model_base.h"
 #include <cmath>
 #include <sstream>
@@ -23,3 +25,4 @@ class EvalLoglik : public EvaluationBase {
         return ss.str();
     }
 };
+#endif

@@ -1,6 +1,9 @@
 #ifndef __MODELS_H__
 #define __MODELS_H__
+#include <boost/property_tree/info_parser.hpp>
+#include <boost/property_tree/ptree.hpp>
 #include <vector>
+#include <fstream>
 #include <tuple>
 #include "user.h"
 class ModelBase {
@@ -33,6 +36,17 @@ class ModelBase {
             }
         }
     }
+  public:
+    static bool loadConfig(const char *file){
+        std::ifstream ifs(file);
+        if(!ifs){
+            std::cerr<<"Can't find config file "<<file<<std::endl;
+        }
+        boost::property_tree::info_parser::read_info(ifs, _config);
+        return true;
+    }
+  protected:
+    static boost::property_tree::ptree _config;
 };
 
 class EvaluationBase {

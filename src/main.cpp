@@ -24,6 +24,7 @@ bool parse_param(int argc, char *argv[], variables_map &vm){
             ("test_start", value<std::string>()->required(), "The start date of the data for testing")
             ("test_end", value<std::string>()->required(), "The end date of the data for testing")
             ("data_template", value<std::string>()->required(), "The template of the directory for the data")
+            ("config", value<std::string>()->required(), "The configure file for parameters of the model")
             ("help", "produce help message");
     
     try{
@@ -113,7 +114,10 @@ int main(int argc, char *argv[]){
               vm["test_start"].as<std::string>().c_str(),
               vm["test_end"].as<std::string>().c_str(),
               test_data);
-
+    if(!ModelBase::loadConfig(vm["config"].as<std::string>().c_str())){
+        std::cerr<<"Load config file "<<vm["config"].as<std::string>().c_str()<<" failed"<<std::endl;
+        return -1;
+    }
     std::vector<ModelBase*> models;
     load_models(vm["models"].as<std::vector<std::string> >(),
                 models);

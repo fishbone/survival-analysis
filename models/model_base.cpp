@@ -4,7 +4,7 @@
 #include "global_constant_model.h"
 #include "user_constant_model.h"
 #include <string>
-
+boost::property_tree::ptree ModelBase::_config;
 ModelBase *ModelBase::makeModel(const char *model_name){
     std::string name = model_name;
     if(name == "model_test"){
