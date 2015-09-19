@@ -77,10 +77,7 @@ class User {
             _visit_session.back().end.setTime(t);
         }else{
             Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
-            
             _visit_session.push_back({Time(t), Time(t), p});
-	    if(_visit_session.size() > 1)
- 	    _visit_session.back().lastEnd = _visit_session[_visit_session.size() - 2].start.hours();
         }
     }
   private:
