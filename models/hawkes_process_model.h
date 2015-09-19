@@ -15,6 +15,7 @@ class HawkesProcessModel : public ModelBase{
     const UserContainer *_user_train;
     const int history_size;
     const int num_kernel;
+    double lr;
     std::vector<double> alpha;
     std::vector<double> sigma;
     std::vector<double> d_alpha; // store derivatives
@@ -22,5 +23,7 @@ class HawkesProcessModel : public ModelBase{
     double d_lambda_u; // no need to use LambdaU data structure because we will be using SGD -> consider 1 user at a time.
     LambdaU lambda_u;
     void getDerivative(const User &user, int session_index);
+    void setLearningRate(double lr);
+    void updateParameter(const long user_id);
 };
 #endif
