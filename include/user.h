@@ -41,12 +41,6 @@ struct Time {
 
 struct Session {
     int binFromLastSession() const{
-        if(lastSession == nullptr){
-            return -1;
-        }
-        int bin = (start.hours() - lastSession->end.hours()) / BIN_WIDTH;
-	if (bin < 0)
-	    std::cout<<"user.h: "<<start.hours()<<" "<<lastSession->end.hours()<<std::endl;
         if(bin < NUM_BIN){
             return bin;    
         }else{
@@ -55,11 +49,17 @@ struct Session {
     }
     Session(Time s, Time e, Session *p):
             start(s),
-            end(e),
-            lastSession(p){}
+            end(e){
+        if(p == nullptr)
+            bin = -1;
+        else
+            bin = (start.hours() - p->end.hours()) / BIN_WIDTH;
+        if (bin < 0 && p)
+            std::cout<<"user.h: "<<start.hours()<<" "<<p->end.hours()<<std::endl;
+    }
     Time start;
     Time end;
-    Session *lastSession;
+    int bin;
 };
 
 class User {
