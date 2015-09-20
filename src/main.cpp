@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/program_options.hpp>
+#include <ctime>
 #include <string>
 #include "data_io.h"
 #include "model_base.h"
@@ -72,8 +73,11 @@ void train_models(
     UserContainer *data,
     std::vector<ModelBase*>& models){
     for(auto i : models){
+        auto start = time(nullptr);
         cerr<<"Training model: "<<i->modelName()<<endl;
         i->train(data);
+        auto end = time(nullptr);
+        cerr<<"Finish training model: "<<i->modelName()<<" CostTime:"<<(end - start)<<"s"<<endl;
     }
 }
 void test_models(

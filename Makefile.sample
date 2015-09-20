@@ -5,6 +5,12 @@ LDFLAGS=-lboost_date_time -lboost_system -lboost_filesystem -lboost_program_opti
 # test-model: models/test-model.cpp $(PS_LIB) $(PS_MAIN)
 # 	$(CXX) $(CFLAGS) $(LDFLAGS) -fopenmp $^ -o $@
 INC=-I./include -I./models
-src = $(wildcard src/*.cpp) $(wildcard models/*.cpp)
-main: $(src)
+obj = $(patsubst %.cpp,%.o,$(wildcard models/*.cpp) $(wildcard src/*.cpp))
+main: $(wildcard *.o)
 	$(CXX) $(CFLAGS) $(LDFLAGS) $(INC) $^ -o $@
+$(obj): %.o: %.cpp
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(INC) -c $^ 
+
+.PHONY: clean
+clean:
+	rm *.o main
