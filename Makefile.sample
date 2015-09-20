@@ -8,7 +8,7 @@ INC=-I./include -I./models
 obj = $(patsubst %.cpp,%.o,$(wildcard models/*.cpp) $(wildcard src/*.cpp))
 
 main: $(obj)
-	$(CXX) $(CFLAGS) $(LDFLAGS) $(INC) $^ -o $@
+	$(CXX) $(CFLAGS) $(LDFLAGS) $(INC) $(notdir $(obj)) -o $@
 
 $(obj): %.o: %.cpp
 	$(CXX) $(CFLAGS) $(LDFLAGS) $(INC) -c $^ 
