@@ -37,7 +37,7 @@ int PiecewiseConstantModel::train(const UserContainer *data){
         for(int i = 1 ; i < (int)sessions.size() ; i++){
             int target_bin = sessions[i].binFromLastSession();
             countInBin[target_bin]++;
-            for(int b = 0 ; b < target_bin; b++){
+            for(int b = 0 ; b <= target_bin; b++){
                 countBeforeBin[b] ++;    
             }
         }
@@ -67,7 +67,7 @@ ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
             if (target_bin >= 0) {
                 double lambda = lambda_u[user.id()][target_bin];
                 loglik += log(lambda);
-                for (int j = 0; j < target_bin; j++) {
+                for (int j = 0; j <= target_bin; j++) {
                     double lambda_j = lambda_u[user.id()][j];
                     if (lambda_j != 0.0){
                         double normalized = lambda_j*BIN_WIDTH;

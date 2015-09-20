@@ -10,20 +10,22 @@ class HawkesProcessModel : public ModelBase{
     const char *modelName();
     PredictRes predict(const User &user);
     HawkesProcessModel(int, int );
-    typedef std::unordered_map<long, double> LambdaU;
+    HawkesProcessModel();
+    typedef std::unordered_map<long, std::vector<double>> LambdaU;
   private:
     const UserContainer *_user_train;
-    const int history_size;
-    const int num_kernel;
+    int history_size;
+    int num_kernel;
     double lr;
+    LambdaU lambda_base;
     std::vector<double> alpha;
     std::vector<double> sigma;
     std::vector<double> d_alpha; // store derivatives
     std::vector<double> d_sigma; // store derivatives
-    double d_lambda_u; // no need to use LambdaU data structure because we will be using SGD -> consider 1 user at a time.
-    LambdaU lambda_u;
+    LambdaU d_lambda_base; // no need to use LambdaU data structure because we will be using SGD -> consider 1 user at a time.
     void getDerivative(const User &user, int session_index);
     void setLearningRate(double lr);
     void updateParameter(const long user_id);
+    double computeSessionLoglik(const User &user, int session_index);
 };
 #endif
