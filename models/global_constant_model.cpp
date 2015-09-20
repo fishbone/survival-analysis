@@ -44,10 +44,8 @@ ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
             // see Alex's note: log lambda_u(t) - \int_0^{cur_start - prev_end} lambda_u(t)
             double log_density = log(lambda);
             double normalized = lambda*(test_sessions[i].start.hours() - prev_end);
-	    cout<<lambda<<" "<<log_density<<" "<<normalized<<" "<<test_sessions[i].start.hours()<<" "<<prev_end<<endl;
             prev_end = test_sessions[i].end.hours();
             loglik += log_density - normalized;
-	    cout<<lambda<<" "<<log_density<<" "<<normalized<<" "<<test_sessions[i].start.hours()<<" "<<prev_end<<endl;
         }
 
         return PredictRes(0,
