@@ -13,11 +13,12 @@ void HawkesProcessModel::setLearningRate(double lr){
 void HawkesProcessModel::updateParameter(const long user_id){
     for(int k = 0 ; k < num_kernel; k++){
         alpha[k] -= lr * d_alpha[k];
-        if(alpha[k]  < 0 ) alpha[k] = 1e-4;
       //  sigma[k] -= lr * d_sigma[k];
     }
     for(int b = 0 ; b < NUM_BIN ; b++){
         lambda_base[user_id][b] -= lr  * d_lambda_base[user_id][b];
+        lambda_base[user_id][b] = max(lambda_base[user_id][b], 1e-2);
+//        cerr <<"d_lambda_base[user_id][b] = "<< d_lambda_base[user_id][b];
     }
 }
 
@@ -25,7 +26,7 @@ void HawkesProcessModel::updateParameter(const long user_id){
 HawkesProcessModel::HawkesProcessModel(){
     num_kernel = 5;
     history_size = 10;
-    lr = 0.00001;
+    lr = 0.000002;
     //initialize sigma and alpha randomly
     alpha = vector<double>(num_kernel,0.0);
     sigma = vector<double>(num_kernel,0.0);
@@ -35,8 +36,9 @@ HawkesProcessModel::HawkesProcessModel(){
     normal_distribution<double> distribution(0.0,0.1);
     default_random_engine generator;
     for(int i = 0 ; i < num_kernel; i++){
-        alpha[i] =  1 + distribution(generator);
-        sigma[i] = 1 + distribution(generator);
+        //alpha[i] =  distribution(generator);
+        alpha[i] =  1;
+        sigma[i] = pow(0.5,i-2);
     }
 }
 int HawkesProcessModel::train(const UserContainer *data){
@@ -47,22 +49,25 @@ int HawkesProcessModel::train(const UserContainer *data){
     this->lambda_base = base.lambda_u;
     for(auto iter = this->lambda_base.begin(); iter != this->lambda_base.end(); ++iter){
         this->d_lambda_base[iter->first] = vector<double>(NUM_BIN,0.0);
+        this->lambda_base[iter->first] = vector<double>(NUM_BIN,0.2);
     }
     cout <<"======training hawkes process using stochastic gradient...."<<endl;
     _user_train = data;
-    for(int i = 0 ; i < 10; i++){
+    for(int i = 0 ; i < 50; i++){
         int trained_user = 0;
         int n_user = data->size();
         // can be done in parallel.......
         for(auto iter = data->begin();
                 iter != data->end(); ++iter){
             trained_user ++;
+            int n_session = iter->second.get_sessions().size();
             if(trained_user % 10000 == 0){
               cerr <<"trained_user = "<<trained_user <<" out of "<< n_user <<endl;    
             }
             for(int session_index = 0; session_index != (int)iter->second.get_sessions().size(); 
                     session_index++){
                 getDerivative(iter->second, session_index);
+                lr = 0.000005 * 1.0/n_session;
                 updateParameter(iter->first);
             }
         }
@@ -75,7 +80,7 @@ void HawkesProcessModel::getDerivative(const User &user, int session_index){
     double start = sessions[session_index].start.hours();
     long id = user.id();
     // reset gradient to zero
-    fill(d_lambda_base[id].begin(), d_lambda_base[id].end(), 0.0);
+  //  fill(d_lambda_base[id].begin(), d_lambda_base[id].end(), 0.0);
     fill(d_alpha.begin(), d_alpha.end(),0.0);
     fill(d_sigma.begin(), d_sigma.end(),0.0);
     if(session_index == 0){
@@ -85,8 +90,8 @@ void HawkesProcessModel::getDerivative(const User &user, int session_index){
 
         int target_bin = sessions[session_index].binFromLastSession();
         assert(target_bin >= 0);
-        assert(lambda_base.find(id) != lambda_base.end());
-        assert(d_lambda_base.find(id) != d_lambda_base.end());
+//        assert(lambda_base.find(id) != lambda_base.end());
+//        assert(d_lambda_base.find(id) != d_lambda_base.end());
         double prev_end = sessions[session_index - 1].end.hours();
         vector<double> & base_u = lambda_base[id];
         vector<double> & d_base_u = d_lambda_base[id];
@@ -126,22 +131,6 @@ void HawkesProcessModel::getDerivative(const User &user, int session_index){
             }
             d_alpha[k] = A - log_numerator/deno;
         }
-        // get deriative for sigma_k // not done yet !!
-        /*
-        for(int k = 0 ; k < num_kernel ; k++){
-            double log_numerator =0.0;
-            double A = 0.0;
-            for(int b = 0 ; b <= target_bin ; b++){
-                for(int h = max(0, session_index - history_size); h < session_index ; h++){
-                    A += BIN_WIDTH * 
-                        exp(-1.0/(2*sigma[k]) *
-                                pow(prev_end + BIN_WIDTH*(b+1) - sessions[h].start.hours(),2)) *
-                        -0.5 * pow(prev_end + BIN_WIDTH*(b+1) - sessions[h].start.hours(),2) /
-                        (sigma[k] * sigma[k]);
-                }
-            }
-        }
-        */
     }
 }
 
@@ -190,8 +179,15 @@ ModelBase::PredictRes HawkesProcessModel::predict(const User &user){
                     log_density_in_log +=  BIN_WIDTH * alpha[k] * exp(-1.0/(2*sigma[k]) *pow(t - history[h].start.hours(),2));
                 }
             }
-            assert(log_density_in_log >= 0);
-            log_density = log(lambda_base[id][target_bin] + log_density_in_log);
+            if (lambda_base[id][target_bin] + log_density_in_log < 0){
+                for(int k = 0 ; k < num_kernel ; k++){
+                 cerr <<alpha[k]<<" @@@"<<endl;   
+                 }
+                log_density = -1234567;
+            }else{
+                log_density = log(lambda_base[id][target_bin] + log_density_in_log);
+            }
+            //log_density = log(lambda_base[id][target_bin] );
             prev_end = test_sessions[i].end.hours();
             loglik += log_density - normalized;
             // add this test session to the history so that we are using the correct history
