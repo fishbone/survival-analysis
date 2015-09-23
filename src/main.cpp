@@ -135,7 +135,8 @@ int main(int argc, char *argv[]){
         cerr<<"Please give at least one model to do training"<<endl;
         return -1;
     }
-
+    for(size_t i = 0; i != models.size(); ++i)
+        models[i]->setData(&train_data, &test_data);
     std::vector<EvaluationBase*> evals;
     load_evals(vm["evaluations"].as<std::vector<std::string> >(),
                evals);

@@ -18,6 +18,11 @@ class ModelBase {
     };
     static ModelBase *makeModel(const char* model_name);
   public:
+    ModelBase():_train_data(nullptr), _test_data(nullptr){}
+    void setData(const UserContainer *train, const UserContainer *test){
+        _train_data = train;
+        _test_data = test;
+    }
     virtual const char *modelName() = 0;
     virtual int train(const UserContainer *data) = 0;
     virtual PredictRes predict(const User &user) = 0;
@@ -47,6 +52,8 @@ class ModelBase {
     }
   protected:
     static boost::property_tree::ptree _config;
+    const UserContainer *_train_data;
+    const UserContainer *_test_data;
 };
 
 class EvaluationBase {
