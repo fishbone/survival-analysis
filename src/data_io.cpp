@@ -17,12 +17,14 @@ typedef bool (*read_handle)(std::istream &is, UserContainer &data);
 4612525700	20150628	1435670188	1435670188	0
 */
 bool stay_handle(std::istream &is, UserContainer &data){
-
     long uid, start_time, end_time;
     int arts;
     char read_date[128];
     is>>uid>>read_date>>start_time>>end_time>>arts;
+    if(is.eof())
+        return true;
     // UTC -> Chine time
+    assert(start_time <= end_time);
     start_time += 8 * 60 * 60;
     end_time += 8 * 60 * 60;
     

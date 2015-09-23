@@ -71,8 +71,10 @@ struct Session {
             end(e){
         if(p == nullptr)
             bin = -1;
-        else
+        else{
             bin = (start.hours() - p->end.hours()) / BIN_WIDTH;
+        }
+
         user_info = u;
     }
     Time start;
@@ -103,6 +105,10 @@ class User {
                 nullptr :
                 _user_info[session_date];
         _visit_session.push_back({Time(start), Time(end), p, u});
+        if(_visit_session.back().binFromLastSession() < -1){
+            std::cerr<<id<<" "<<start<<std::endl;
+            assert(false);
+        }
         return _visit_session.back();
     }
 
