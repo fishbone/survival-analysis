@@ -10,73 +10,72 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
+typedef bool (*read_handle)(std::istream &is, UserContainer &data);
+
 /*
-2252190	14	20150803	5190310387	1438589567	1	114
-2252190	14	20150803	5181564928	1438581433	0	0
-2252190	14	20150803	5134925829	1438580830	0	0
-2252190	14	20150803	5188765191	1438580830	0	0
+4612525700	20150628	1435644003	1435645012	4	133961	35	146017	528	306609	34	423517	81
+4612525700	20150628	1435670188	1435670188	0
 */
+bool stay_handle(std::istream &is, UserContainer &data){
+
+    long uid, start_time, end_time;
+    int arts;
+    char read_date[128];
+    is>>uid>>read_date>>start_time>>end_time>>arts;
+    // UTC -> Chine time
+    start_time += 8 * 60 * 60;
+    end_time += 8 * 60 * 60;
+    
+    if(!data.count(uid)){
+        data.insert(std::make_pair(uid, User(uid)));
+    }
+    
+    Session &sess = data[uid].add_session(uid,
+                                          start_time,
+                                          end_time,
+                                          read_date);
+    for(int i = 0; i < arts; ++i){
+        long id, stay;
+        is>>id>>stay;
+        sess.articles.push_back({id, stay});
+    }
+    return true;
+}
+
+bool app_handle(std::istream &s, UserContainer &data){
+    return true;
+}
+
+bool profile_handle(const std::string &s, UserContainer &data){
+    return true;
+}
+
 static int read_data_from_file(
     const char* filename,
-    UserContainer &data){
+    UserContainer &data,
+    read_handle handle){
     std::ifstream ifs(filename);
-    std::string s;
     int count = 0;
-    while(std::getline(ifs, s)){
+    while(!ifs.eof()){
         if(count % 1000 == 0){
             std::cerr<<"\rReading: "<<filename<<
                     "\tLoadFactor:"<<data.load_factor()<<
                     "\t"<<count;
         }
-        int uid_type, read_date, read, stay_time;
-        long uid, impr_time, group_id;
-        int r_num = sscanf(s.c_str(),
-                           "%ld\t%d\t%d\t%ld\t%ld\t%d\t%d",
-                           &uid, &uid_type, &read_date, &group_id, &impr_time, &read, &stay_time);
-        // UTC -> Chine time
-        impr_time += 8 * 60 * 60;
-
-        if(r_num != 7){
-            std::cerr<<"Error: "<<s<<std::endl;
-            continue;
-        }
-        if(!data.count(uid)){
-            data.insert(std::make_pair(uid, User(uid)));
-        }
-        data[uid].add_impr(impr_time);
+        handle(ifs, data);
         ++count;
     }
-    std::cerr<<"\rReading: "<<filename<<
-            "\tLoadFactor:"<<data.load_factor()<<
-            "\t"<<count<<std::endl;
+
+    std::cerr<<"\rReading: "<<filename
+             <<"\tLoadFactor:"<<data.load_factor()
+             <<"\t"<<count<<std::endl;
 
     return 0;
 }
-static int read_data_from_dir(
-    const char* dirname,
-    UserContainer &data){
-    using namespace boost::filesystem;
-    using namespace std;
-    path p(dirname);
-    if(!exists(p)){
-        std::cerr<<"Path doesn't exist ["<<dirname<<"]"<<endl;
-        return 0;
-    }
-    if(!is_directory(p)){
-        std::cerr<<"It't not a directory ["<<dirname<<"]"<<endl;
-        return 0;
-    }
-    int count = 0;
-    for (directory_entry& x : directory_iterator(p)){
-        const path& f = x.path();
-        const char* filename = f.filename().c_str();
-        if(filename[0] == '.')
-            continue;
-        count += read_data_from_file(f.c_str(), data);
-    }
-    return count;
-}
-int read_data(const char* dirtemp,
+
+int read_data(const char* stay_dirtemp,
+              const char* app_dirtemp,
+              const char* profile_dirtemp,
               const char* start_day,
               const char* end_day,
               UserContainer &data){
@@ -87,15 +86,44 @@ int read_data(const char* dirtemp,
     date end(from_undelimited_string(ud));
     date_duration inc_date(1);
     int count = 0;
-    while(start <= end){
-        std::string cur_date = to_iso_string(start);
-        char dirname[128];
-        snprintf(dirname,
-                 sizeof(dirname),
-                 dirtemp, cur_date.c_str());
-        count +=  read_data_from_dir(dirname,
-                                     data);
-        start = start + inc_date;
+    char filename[256];
+    /*
+    std::cerr<<"Reading profile data"<<std::endl;
+    for(date d = start; d <= end; d = d + inc_date){    
+        std::string cur_date = to_iso_string(d);
+        snprintf(filename,
+                 sizeof(filename),
+                 profile_dirtemp,
+                 cur_date.c_str());
+        count += read_data_from_file(filename,
+                                     data,
+                                     profile_handle);
+    }
+    */
+    /*
+    std::cerr<<"Reading app data"<<std::endl;
+    for(date d = start; d <= end; d = d + inc_date){    
+        std::string cur_date = to_iso_string(d);
+        snprintf(filename,
+                 sizeof(filename),
+                 app_dirtemp,
+                 cur_date.c_str());
+        count += read_data_from_file(filename,
+                                     data,
+                                     app_handle);
+    }
+    */
+    std::cerr<<"Reading stay data"<<std::endl;
+    for(date d = start; d <= end; d = d + inc_date){    
+        std::string cur_date = to_iso_string(d);
+        snprintf(filename,
+                 sizeof(filename),
+                 stay_dirtemp,
+                 cur_date.c_str());
+        count += read_data_from_file(filename,
+                                     data,
+                                     stay_handle);
     }
     return count;
 }
+

@@ -9,6 +9,7 @@
 #include <iostream>
 struct Time {
   public:
+    Time(){}
     Time(long t){
         setTime(t);
     }
@@ -20,6 +21,9 @@ struct Time {
     }
     int dayOfWeek() const {
         return _time.date().day_of_week();
+    }
+    int days() const {
+        return seconds() / 60 / 60 / 24;
     }
     double hourOfDay() const {
         return (seconds() % (24 * 60 * 60)) / (60.0 * 60.0);
@@ -38,6 +42,21 @@ struct Time {
     static const boost::posix_time::ptime _time_t_epoch;
     friend class User;
 };
+struct ReadInfo {
+    ReadInfo(long id, long t):articleId(id),
+                              stayTime(t){}
+    long articleId;
+    long stayTime;
+};
+struct Apps{
+    double date;
+    int app_id;
+};
+
+struct UserFeature {
+    typedef std::pair<int, int> Feature;
+    std::vector<Feature> features;
+};
 
 struct Session {
     int binFromLastSession() const{
@@ -47,38 +66,48 @@ struct Session {
             return NUM_BIN - 1;    
         }
     }
-    Session(Time s, Time e, Session *p):
+    Session(Time s, Time e, Session *p, UserFeature *u):
             start(s),
             end(e){
         if(p == nullptr)
             bin = -1;
         else
             bin = (start.hours() - p->end.hours()) / BIN_WIDTH;
-        if (bin < 0 && p)
-            std::cout<<"user.h: "<<start.hours()<<" "<<p->end.hours()<<std::endl;
+        user_info = u;
     }
     Time start;
     Time end;
     int bin;
+    std::vector<ReadInfo> articles;
+    UserFeature *user_info;
 };
 
 class User {
   public:
     User(){}
-    User(long uid):user_id(uid){}
+    User(long id):_user_id(id){}
     const std::vector<Session> &get_sessions() const{
         return _visit_session;
     }
     const long id() const{
-        return user_id;
+        return _user_id;
     }
-    void add_impr(long t){
-        if(same_session(t)){
-            _visit_session.back().end.setTime(t);
-        }else{
-            Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
-            _visit_session.push_back({Time(t), Time(t), p});
-        }
+
+    Session &add_session(long id,
+                         long start,
+                         long end,
+                         const char *session_date){
+        // For last session
+        Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
+        UserFeature *u = _user_info.count(session_date) == 0 ?
+                nullptr :
+                _user_info[session_date];
+        _visit_session.push_back({Time(start), Time(end), p, u});
+        return _visit_session.back();
+    }
+
+    void add_userinfo(const char*date, UserFeature *u){
+        _user_info[date] = u;
     }
   private:
     bool same_session(long t){
@@ -90,9 +119,9 @@ class User {
         return false;
     }
   private:
-    long user_id;
+    long _user_id;
     std::vector<Session> _visit_session;
-
+    std::unordered_map<std::string, UserFeature*> _user_info;
 };
 typedef std::unordered_map<long, User> UserContainer;
 #endif
