@@ -1,11 +1,10 @@
 #ifndef __MODELS_H__
 #define __MODELS_H__
-#include <boost/property_tree/info_parser.hpp>
-#include <boost/property_tree/ptree.hpp>
 #include <vector>
 #include <fstream>
 #include <tuple>
 #include "user.h"
+#include "jsoncons/json.hpp"
 class ModelBase {
   public:
     struct PredictRes{
@@ -43,15 +42,11 @@ class ModelBase {
     }
   public:
     static bool loadConfig(const char *file){
-        std::ifstream ifs(file);
-        if(!ifs){
-            std::cerr<<"Can't find config file "<<file<<std::endl;
-        }
-        boost::property_tree::info_parser::read_info(ifs, _config);
+        _config = jsoncons::json::parse_file(file);
         return true;
     }
   protected:
-    static boost::property_tree::ptree _config;
+    static jsoncons::json _config;
     const UserContainer *_train_data;
     const UserContainer *_test_data;
 };

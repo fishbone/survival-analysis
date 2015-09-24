@@ -25,11 +25,13 @@ struct Time {
     int days() const {
         return seconds() / 60 / 60 / 24;
     }
-    double hourOfDay() const {
+    double urOfDay() const {
         return (seconds() % (24 * 60 * 60)) / (60.0 * 60.0);
     }
     double hours() const {
-        return seconds() / 60.0 / 60.0;
+        double r = seconds();
+        r /= 3600.0;
+        return r;
     }
     void setTime(long t){
         _time = boost::posix_time::from_time_t(t);        

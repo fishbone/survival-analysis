@@ -5,7 +5,7 @@ class ModelTest : public ModelBase {
   public:
     virtual const char *modelName(){
         ss.clear();
-        double v = _config.get<double>("test.a");
+        double v = _config["test"]["a"].as<double>();;
         ss<<"model_test[v="<<v<<"]";
 	return ss.str().c_str();
     }
