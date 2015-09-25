@@ -1,10 +1,13 @@
 #include "user_constant_model.h"
+#include "global_constant_model.h"
 #include "data_io.h"
 #include <iostream>
 using namespace std;
 
 int UserConstantModel::train(const UserContainer *data){
     _user_train = data;
+    GlobalConstantModel global_model;
+    global_model.train(data);
     for(auto iter = data->begin();
             iter != data->end(); ++iter){
         double total_time = 0;
@@ -27,15 +30,20 @@ int UserConstantModel::train(const UserContainer *data){
         if(total_time != 0){
             double avg = session_num / total_time;
             lambda_u.insert(make_pair(iter->first, avg));
+        }else{
+          // if this user only has one session, we simply fill in the rate
+          // with global constant value
+            lambda_u.insert(make_pair(iter->first, global_model.lambda));
         }
     }
     return 0;
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){
     auto ite = _user_train->find(user.id());
-    if(ite == _user_train->end() || !lambda_u.count(user.id())){
+    if(ite == _user_train->end()){
         return PredictRes(-1, 0.0, false);
     }else{
+        // this compute 1/n_session * p(t' <= t), not the log-likelihood...
         const vector<Session> &train_sessions = ite->second.get_sessions();
         const vector<Session> &test_sessions = user.get_sessions();
         double loglik = 0.0;
@@ -44,9 +52,10 @@ ModelBase::PredictRes UserConstantModel::predict(const User &user){
         int num_sessions = (int)test_sessions.size();
         for(int i = 0 ; i < num_sessions ; i++){
             double log_density = log(lambda);
-            double normalized = lambda*(test_sessions[i].start.hours() - prev_end);
+            double integral_lambda = lambda*(test_sessions[i].start.hours() - prev_end);
+            // 1 - G(t) = 1 - exp(-int_{0}^t lambda(t) dt)
+            loglik += log_density - integral_lambda;
             prev_end = test_sessions[i].end.hours();
-            loglik += log_density - normalized;
         }   
 
         return PredictRes(0,

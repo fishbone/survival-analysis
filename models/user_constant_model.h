@@ -5,6 +5,7 @@
 #include <iostream>
 
 class UserConstantModel : public ModelBase{
+  friend class HawkesProcessModel;
   public:
     int train(const UserContainer *data);
     const char *modelName();

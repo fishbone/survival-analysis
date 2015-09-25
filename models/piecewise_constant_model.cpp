@@ -51,7 +51,7 @@ int PiecewiseConstantModel::train(const UserContainer *data){
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
     auto ite = _user_train->find(user.id());
-    if(ite == _user_train->end() || !lambda_u.count(user.id())){
+    if(ite == _user_train->end()){
         return PredictRes(-1, 0.0, false);
     }else{
         const vector<Session> &train_sessions = ite->second.get_sessions();
@@ -59,7 +59,6 @@ ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
         double loglik = 0.0;
         double prev_end = train_sessions.back().end.hours();
         int num_sessions = (int)test_sessions.size();
-        if(train_sessions.size() == 1)return PredictRes(-1, 0.0, false);
         for(int i = 0 ; i < num_sessions ; i++){
             int target_bin = (test_sessions[i].start.hours() - prev_end)/(double)BIN_WIDTH;
             if(target_bin >= NUM_BIN)target_bin = NUM_BIN - 1;

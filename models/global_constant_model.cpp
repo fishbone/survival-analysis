@@ -32,7 +32,7 @@ int GlobalConstantModel::train(const UserContainer *data){
 ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
     // user here should contain test data sessions
     auto ite = _user_train->find(user.id());
-    if(ite == _user_train->end() || ite->second.get_sessions().size() <= 1){
+    if(ite == _user_train->end()){
         return PredictRes(-1, 0.0, false);
     }else{
         const vector<Session> &train_sessions = ite->second.get_sessions();
@@ -43,9 +43,9 @@ ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
         for(int i = 0 ; i < num_sessions ; i++){
             // see Alex's note: log lambda_u(t) - \int_0^{cur_start - prev_end} lambda_u(t)
             double log_density = log(lambda);
-            double normalized = lambda*(test_sessions[i].start.hours() - prev_end);
+            double integral_lambda = lambda*(test_sessions[i].start.hours() - prev_end);
             prev_end = test_sessions[i].end.hours();
-            loglik += log_density - normalized;
+            loglik += log_density - integral_lambda;
         }
 
         return PredictRes(0,
