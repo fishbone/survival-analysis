@@ -4,6 +4,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <iterator>
+#include <random>
 #include <tuple>
 #include "user.h"
 #include "jsoncons/json.hpp"
@@ -23,17 +24,6 @@ class SparseVector {
       }
     }
 
-    int nnz() const{
-      return (int)_feature.size();
-    }
-
-    double getVal(int ind){
-      return  _feature[ind];
-    }
-
-    void insert(int ind, double val){
-      _feature[ind] = val;
-    }
 
     VecIterator begin() const{
       return _feature.begin();
@@ -42,7 +32,31 @@ class SparseVector {
     VecIterator end() const{
       return _feature.end();
     }
+    
+    static SparseVector rand_init(int num_feature);
 
+    static SparseVector zero_init(int num_feature);
+    
+    int nnz() const;
+
+    double getVal(int ind);
+
+    void insert(int ind, double val);
+
+    double & operator[](int ind);
+
+    friend SparseVector operator*(const SparseVector &lhs, double scale);
+    
+    friend SparseVector operator/(const SparseVector &lhs, double scale);
+    
+
+    friend SparseVector operator-(const SparseVector &lhs, const SparseVector& rhs);
+
+    SparseVector& operator+=(const SparseVector& vec);
+
+    SparseVector& operator-=(const SparseVector& vec);
+    
+    friend std::ostream & operator<<(std::ostream &os, const SparseVector &vec);
 
     static double dotProduct(SparseVector &, SparseVector &) ;
 
