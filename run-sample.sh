@@ -1,9 +1,9 @@
 #! /bin/bash
-./main --models=piecewise_constant_model \
+./main --models=model_test \
+       --models=piecewise_constant_model \
        --models=global_constant_model \
        --models=user_constant_model \
        --models=hawkes_process_model \
-       --models=model_test \
        --evaluations=eval_loglik \
        --train_start=20150607 \
        --train_end=20150608 \

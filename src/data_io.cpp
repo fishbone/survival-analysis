@@ -1,4 +1,5 @@
 #include "data_io.h"
+#include "feature.h"
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
@@ -10,17 +11,18 @@
 #include <sstream>
 #include <fstream>
 #include <algorithm>
-typedef bool (*read_handle)(std::istream &is, UserContainer &data);
+typedef bool (*read_handle)(const char *prefix, std::istream &is, UserContainer &data);
 
 /*
-4612525700	20150628	1435644003	1435645012	4	133961	35	146017	528	306609	34	423517	81
-4612525700	20150628	1435670188	1435670188	0
+  4612525700	20150628	1435644003	1435645012	4	133961	35	146017	528	306609	34	423517	81
+  4612525700	20150628	1435670188	1435670188	0
 */
-bool stay_handle(std::istream &is, UserContainer &data){
+bool stay_handle(const char *prefix, std::istream &is, UserContainer &data){
     long uid, start_time, end_time;
     int arts;
     char read_date[128];
     is>>uid>>read_date>>start_time>>end_time>>arts;
+
     if(is.eof())
         return true;
     // UTC -> Chine time
@@ -36,13 +38,21 @@ bool stay_handle(std::istream &is, UserContainer &data){
                                           start_time,
                                           end_time,
                                           read_date);
+    int offset;
     for(int i = 0; i < arts; ++i){
-        long id, stay;
-        is>>id>>stay;
-        sess.articles.push_back({id, stay});
+        std::string str_id;
+        int stay;
+        std::string tmp = str_id + "_read";
+        is>>str_id>>stay;
+        offset = getFeatureOffset(tmp);
+        sess.session_features.push_back({offset, 1});
+        tmp = str_id + "_stay";
+        offset = getFeatureOffset(tmp);
+        sess.session_features.push_back({offset, stay});
     }
     return true;
 }
+
 
 bool app_handle(std::istream &s, UserContainer &data){
     return true;
@@ -64,7 +74,7 @@ static int read_data_from_file(
                     "\tLoadFactor:"<<data.load_factor()<<
                     "\t"<<count;
         }
-        handle(ifs, data);
+        handle(filename, ifs, data);
         ++count;
     }
 

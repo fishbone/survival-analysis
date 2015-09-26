@@ -2,6 +2,7 @@
 #define __USER_H__
 #include <vector>
 #include <unordered_map>
+#include "feature.h"
 #include "comm.h"
 #include <boost/date_time/gregorian/gregorian_types.hpp>
 #include <boost/date_time/gregorian/gregorian.hpp>
@@ -44,21 +45,6 @@ struct Time {
     static const boost::posix_time::ptime _time_t_epoch;
     friend class User;
 };
-struct ReadInfo {
-    ReadInfo(long id, long t):articleId(id),
-                              stayTime(t){}
-    long articleId;
-    long stayTime;
-};
-struct Apps{
-    double date;
-    int app_id;
-};
-
-struct UserFeature {
-    typedef std::pair<int, int> Feature;
-    std::vector<Feature> features;
-};
 
 struct Session {
     int binFromLastSession() const{
@@ -68,7 +54,7 @@ struct Session {
             return NUM_BIN - 1;    
         }
     }
-    Session(Time s, Time e, Session *p, UserFeature *u):
+    Session(Time s, Time e, Session *p, std::vector<Feature> *u):
             start(s),
             end(e){
         if(p == nullptr)
@@ -76,14 +62,13 @@ struct Session {
         else{
             bin = (start.hours() - p->end.hours()) / BIN_WIDTH;
         }
-
-        user_info = u;
+        day_features = u;
     }
     Time start;
     Time end;
     int bin;
-    std::vector<ReadInfo> articles;
-    UserFeature *user_info;
+    std::vector<Feature> session_features;
+    std::vector<Feature> *day_features;
 };
 
 class User {
@@ -96,14 +81,12 @@ class User {
     const long id() const{
         return _user_id;
     }
-
     Session &add_session(long id,
                          long start,
                          long end,
                          const char *session_date){
-        // For last session
         Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
-        UserFeature *u = _user_info.count(session_date) == 0 ?
+        std::vector<Feature> *u = _user_info.count(session_date) == 0 ?
                 nullptr :
                 _user_info[session_date];
         _visit_session.push_back({Time(start), Time(end), p, u});
@@ -114,7 +97,7 @@ class User {
         return _visit_session.back();
     }
 
-    void add_userinfo(const char*date, UserFeature *u){
+    void add_userinfo(const char*date, std::vector<Feature> *u){
         _user_info[date] = u;
     }
   private:
@@ -129,7 +112,7 @@ class User {
   private:
     long _user_id;
     std::vector<Session> _visit_session;
-    std::unordered_map<std::string, UserFeature*> _user_info;
+    std::unordered_map<std::string, std::vector<Feature>*> _user_info;
 };
 typedef std::unordered_map<long, User> UserContainer;
 #endif
