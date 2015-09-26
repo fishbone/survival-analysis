@@ -31,6 +31,10 @@ class SparseVector {
       return  _feature[ind];
     }
 
+    void insert(int ind, double val){
+      _feature[ind] = val;
+    }
+
     VecIterator begin() const{
       return _feature.begin();
     }
