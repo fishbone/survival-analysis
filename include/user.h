@@ -90,9 +90,7 @@ class User {
                          long end,
                          const char *session_date){
         Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
-        std::vector<Feature> *u = _user_info.count(session_date) == 0 ?
-                nullptr :
-                &(_user_info[session_date]);
+        std::vector<Feature> *u = &(_user_info[session_date]);
         _visit_session.push_back({Time(start), Time(end), p, u});
         if(_visit_session.back().binFromLastSession() < -1){
             std::cerr<<id<<" "<<start<<std::endl;

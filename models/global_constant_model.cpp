@@ -32,7 +32,7 @@ int GlobalConstantModel::train(const UserContainer *data){
 ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
     // user here should contain test data sessions
     auto ite = _user_train->find(user.id());
-    if(ite == _user_train->end() || ite->second.get_sessions().size() == 0){
+    if(ite == _user_train->end()){
         return PredictRes(-1, 0.0, false);
     }else{
         const vector<Session> &train_sessions = ite->second.get_sessions();
