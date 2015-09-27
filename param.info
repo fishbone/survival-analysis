@@ -6,12 +6,12 @@
       "history_size": 20
   },
     "feature_based":{
-      "lr_w": 0.0000,
+      "lr_w": 0.00001,
       "momentum": 0.8,
       "max_iter": 100
     },
-  "test":{
-    "a": 123,
-    "x": [1,2,3,4]
-  }
+    "test":{
+      "a": 123,
+      "x": [1,2,3,4]
+    }
 }
