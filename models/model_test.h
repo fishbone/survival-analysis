@@ -7,6 +7,11 @@ class ModelTest : public ModelBase {
         ss.clear();
         double v = _config["test"]["a"].as<double>();;
         ss<<"model_test[v="<<v<<"]";
+        auto x = _config["test"]["x"].as<std::vector<int> >();
+        for(int i = 0; i < x.size(); ++i){
+            ss<<" "<<x[i];
+        }
+        ss<<"\n";
 	return ss.str().c_str();
     }
 
