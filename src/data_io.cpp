@@ -112,6 +112,7 @@ static int read_data_from_file(
     UserContainer &data,
     read_handle handle){
     std::ifstream ifs(filename);
+    if(!ifs.is_open()) return 0;
     int count = 0;
     while(!ifs.eof()){
         if(count % 1000 == 0){

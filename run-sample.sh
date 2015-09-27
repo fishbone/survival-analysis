@@ -5,8 +5,8 @@
        --models=user_constant_model \
        --models=hawkes_process_model \
        --evaluations=eval_loglik \
-       --train_start=20150604 \
-       --train_end=20150608 \
+       --train_start=20150628 \
+       --train_end=20150701 \
        --test_start=20150611 \
        --test_end=20150613 \
        --stay_data_template=./daily/%s.daily \
