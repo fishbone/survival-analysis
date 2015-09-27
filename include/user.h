@@ -23,9 +23,9 @@ struct Time {
         return _time.date().day_of_week();
     }
     int days() const {
-        return seconds() / 60 / 60 / 24;
+        return seconds() / 60.0 / 60.0 / 24.0;
     }
-    double urOfDay() const {
+    double hourOfDay() const {
         return (seconds() % (24 * 60 * 60)) / (60.0 * 60.0);
     }
     double hours() const {
@@ -95,6 +95,10 @@ class User {
     }
     const long id() const{
         return _user_id;
+    }
+    
+    void append_session(const Session& session){
+      _visit_session.push_back(session);
     }
 
     Session &add_session(long id,
