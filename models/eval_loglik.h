@@ -3,6 +3,7 @@
 #include "model_base.h"
 #include <cmath>
 #include <sstream>
+#include <iostream>
 class EvalLoglik : public EvaluationBase {
   public:
     const char *evalName(){

@@ -32,6 +32,8 @@ class ModelBase {
         for(auto iter = data->begin();
             iter != data->end();
             ++iter){
+            if(iter->second.get_sessions().size() == 0)
+                continue;
             PredictRes res = predict(iter->second);
             if(res.valid){
                 result.push_back(std::make_tuple(
