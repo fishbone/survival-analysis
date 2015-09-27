@@ -169,7 +169,7 @@ void HawkesProcessModel::getDerivative(const User &user, int session_index){
 ModelBase::PredictRes HawkesProcessModel::predict(const User &user){
   auto ite = _user_train->find(user.id());
   long id = user.id();
-  if(ite == _user_train->end()){
+  if(ite == _user_train->end() || ite->second.get_sessions().size() == 0){
     return PredictRes(0, 0, false);
   }else{
     const vector<Session> &train_sessions = ite->second.get_sessions();

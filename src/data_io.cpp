@@ -103,10 +103,6 @@ bool profile_handle(std::istream &s,
 }
 
 
-bool profile_handle(const std::string &s, UserContainer &data){
-    return true;
-}
-
 static int read_data_from_file(
     const char* filename,
     UserContainer &data,

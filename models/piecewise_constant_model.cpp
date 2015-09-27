@@ -51,7 +51,7 @@ int PiecewiseConstantModel::train(const UserContainer *data){
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
     auto ite = _user_train->find(user.id());
-    if(ite == _user_train->end()){
+    if(ite == _user_train->end() || ite->second.get_sessions().size() != 0){
         return PredictRes(-1, 0.0, false);
     }else{
         const vector<Session> &train_sessions = ite->second.get_sessions();
