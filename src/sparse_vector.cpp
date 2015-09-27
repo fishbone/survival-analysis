@@ -45,7 +45,7 @@ SparseVector SparseVector::rand_init(int num_feature){
 SparseVector SparseVector::zero_init(int num_feature){                             
   SparseVector vec;                                                         
   for(int i = 0 ;i  < num_feature ; i++){                                   
-    vec.insert(i,(double)i);                                                
+    vec.insert(i,0);                                                
   }                                                                         
   return vec;                                                               
 }
