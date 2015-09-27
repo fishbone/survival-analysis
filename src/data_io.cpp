@@ -141,7 +141,7 @@ int read_data(const char* stay_dirtemp,
     date_duration inc_date(1);
     int count = 0;
     char filename[256];
-
+    
     std::cerr<<"Reading profile data"<<std::endl;
     for(date d = start; d <= end; d = d + inc_date){    
         std::string cur_date = to_iso_string(d);
