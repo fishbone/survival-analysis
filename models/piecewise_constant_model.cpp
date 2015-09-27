@@ -61,9 +61,12 @@ ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
         int num_sessions = (int)test_sessions.size();
         for(int i = 0 ; i < num_sessions ; i++){
             int target_bin = (test_sessions[i].start.hours() - prev_end)/(double)BIN_WIDTH;
+            if(target_bin < 0){
+              cerr << user.id()<<" "<<test_sessions[i].start.hours() <<" "<<prev_end<<" "<<target_bin<<endl;
+            }
+            assert(target_bin >= 0);
             if(target_bin >= NUM_BIN)target_bin = NUM_BIN - 1;
             prev_end = test_sessions[i].end.hours();
-            if (target_bin >= 0) {
                 double lambda = lambda_u[user.id()][target_bin];
                 loglik += log(lambda);
                 for (int j = 0; j <= target_bin; j++) {
@@ -73,7 +76,6 @@ ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
                         loglik += - normalized;
                     }
                 }
-            }
         }   
 
         return PredictRes(0,
