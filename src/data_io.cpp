@@ -71,15 +71,37 @@ bool app_handle(std::istream &s,
         data.insert(std::make_pair(uid, User(uid)));
     }
 
+    std::string str_id;
     for(int i = 0; i < apps; ++i){
-        std::string str_id;
-        int stay = 1;
-        std::string tmp = str_id + "_app";
         s>>str_id;
+        std::string tmp = str_id + "_app";
         int offset = getFeatureOffset(tmp);
         data[uid].add_feature(date, {offset, 1});
     }
 }
+
+bool profile_handle(std::istream &s,
+                    UserContainer &data){
+    long uid;
+    char date[128];
+    int apps;
+    s>>uid>>date>>apps;
+    while(s.eof())
+        return false;
+
+    if(!data.count(uid)){
+        data.insert(std::make_pair(uid, User(uid)));
+    }
+
+    std::string str_id;
+    for(int i = 0; i < apps; ++i){
+        s>>str_id;
+        std::string tmp = str_id + "_prof";
+        int offset = getFeatureOffset(tmp);
+        data[uid].add_feature(date, {offset, 1});
+    }
+}
+
 
 bool profile_handle(const std::string &s, UserContainer &data){
     return true;
@@ -122,7 +144,7 @@ int read_data(const char* stay_dirtemp,
     date_duration inc_date(1);
     int count = 0;
     char filename[256];
-    /*
+
     std::cerr<<"Reading profile data"<<std::endl;
     for(date d = start; d <= end; d = d + inc_date){    
         std::string cur_date = to_iso_string(d);
@@ -134,7 +156,7 @@ int read_data(const char* stay_dirtemp,
                                      data,
                                      profile_handle);
     }
-    */
+
     std::cerr<<"Reading app data"<<std::endl;
     for(date d = start; d <= end; d = d + inc_date){    
         std::string cur_date = to_iso_string(d);
