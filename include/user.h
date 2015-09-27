@@ -88,7 +88,7 @@ class User {
         Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
         std::vector<Feature> *u = _user_info.count(session_date) == 0 ?
                 nullptr :
-                _user_info[session_date];
+                &(_user_info[session_date]);
         _visit_session.push_back({Time(start), Time(end), p, u});
         if(_visit_session.back().binFromLastSession() < -1){
             std::cerr<<id<<" "<<start<<std::endl;
@@ -97,8 +97,8 @@ class User {
         return _visit_session.back();
     }
 
-    void add_userinfo(const char*date, std::vector<Feature> *u){
-        _user_info[date] = u;
+    void add_feature(const char*date, Feature u){
+        _user_info[date].push_back(u);
     }
   private:
     bool same_session(long t){
@@ -112,7 +112,7 @@ class User {
   private:
     long _user_id;
     std::vector<Session> _visit_session;
-    std::unordered_map<std::string, std::vector<Feature>*> _user_info;
+    std::unordered_map<std::string, std::vector<Feature> > _user_info;
 };
 typedef std::unordered_map<long, User> UserContainer;
 #endif

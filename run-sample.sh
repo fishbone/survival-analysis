@@ -10,6 +10,6 @@
        --test_start=20150611 \
        --test_end=20150613 \
        --stay_data_template=./daily/%s.daily \
+       --app_data_template=./app/%s.app \
        --profile_data_template=/home/yicheng1/survival-analysis/processed_data/%s.profile \
-       --app_data_template=/home/yicheng1/survival-analysis/processed_data/%s.app \
        --config=param.info
