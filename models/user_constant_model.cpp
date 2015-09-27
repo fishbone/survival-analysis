@@ -40,7 +40,7 @@ int UserConstantModel::train(const UserContainer *data){
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){
     auto ite = _user_train->find(user.id());
-    if(ite == _user_train->end()){
+    if(ite == _user_train->end() || ite->second.get_sessions().size() == 0){
         return PredictRes(-1, 0.0, false);
     }else{
         // this compute 1/n_session * p(t' <= t), not the log-likelihood...
