@@ -37,10 +37,10 @@ struct Time {
     void setTime(long t){
         _time = boost::posix_time::from_time_t(t);        
     }
-  private:
     long seconds() const{
         return (_time - _time_t_epoch).total_seconds();
     }
+  private:
     boost::posix_time::ptime _time;
     static const boost::posix_time::ptime _time_t_epoch;
     friend class User;

@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
     }
     cerr<<"Start to train models"<<endl;
     train_models(&train_data, models);
-
+    cerr <<"Start to test models"<<endl;
     test_models(&test_data, models, evals);
     
     return 0;

@@ -4,6 +4,7 @@
 #include "global_constant_model.h"
 #include "user_constant_model.h"
 #include "piecewise_constant_model.h"
+#include "feature_based_model.h"
 #include "hawkes_process_model.h"
 #include <string>
 jsoncons::json ModelBase::_config;
@@ -19,6 +20,8 @@ ModelBase *ModelBase::makeModel(const char *model_name){
 	    return new PiecewiseConstantModel();
     }else if(name == "hawkes_process_model"){
         return new HawkesProcessModel();   
+    }else if(name == "feature_based_model"){
+        return new FeatureBasedModel();
     }
     return nullptr;
 }

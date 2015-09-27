@@ -7,6 +7,7 @@
 #include <random>
 #include <tuple>
 #include "user.h"
+#include <math.h>
 #include "jsoncons/json.hpp"
 
 typedef std::unordered_map<int, double>::const_iterator VecIterator;
@@ -57,6 +58,12 @@ class SparseVector {
     SparseVector& operator-=(const SparseVector& vec);
     
     friend std::ostream & operator<<(std::ostream &os, const SparseVector &vec);
+
+    void threshold(double T){
+      for(auto iter : _feature){
+        _feature[iter.first] = std::max(iter.second, T);
+      }
+    }
 
     static double dotProduct(SparseVector &, SparseVector &) ;
 

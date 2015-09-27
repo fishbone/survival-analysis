@@ -6,6 +6,7 @@
 
 class PiecewiseConstantModel : public ModelBase{
   friend class HawkesProcessModel;
+  friend class FeatureBasedModel;
   public:
     int train(const UserContainer *data);
     const char *modelName();

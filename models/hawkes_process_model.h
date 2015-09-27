@@ -1,10 +1,10 @@
 #ifndef __HAWKES_PROCESS_MODEL_H__
 #define __HAWKES_PROCESS_MODEL_H__
 #include "data_io.h"
+#include "util.h"
 #include <utility>
 #include "model_base.h"
 #include <iostream>
-enum Kernels{rbf, rbf_24h, rbf_7d};
 
 class HawkesProcessModel : public ModelBase{
   public:
@@ -29,6 +29,5 @@ class HawkesProcessModel : public ModelBase{
     void getDerivative(const User &user, int session_index);
     void updateParameter(const long user_id, double);
     double evaluateLoglik();
-    double evalKernel(Kernels &, double, double , double );
 };
 #endif
