@@ -157,7 +157,7 @@ vector<DataPoint> ConstructFeatureModel::buildVectorRepresentation(DatasetContai
       assert(session_index < (int)sessions.size());
       DataPoint _example;
       _example.x = X[uid][session_index];
-      _example.integral_x = integral_X[uid][session_index];
+//      _example.integral_x = integral_X[uid][session_index];
       _example.uid = uid;
       _example.s_id = session_index;
       _example.start = sessions[session_index].start.seconds();
@@ -205,8 +205,8 @@ void ConstructFeatureModel::buildDataset(){
   DatasetContainer Y;
   cout <<"==========building the hawkes feature======="<<endl;
   buildHawkesFeature(X);
-  cout <<"==========building integral features========"<<endl;
-  buildIntegralHawkesFeature(integral_X);
+//  cout <<"==========building integral features========"<<endl;
+//  buildIntegralHawkesFeature(integral_X);
   cout <<"==========building labels==================="<<endl;
   buildLabel(Y);
   cout <<"==========covert to vector representation==="<<endl;
@@ -223,14 +223,9 @@ void ConstructFeatureModel::writeToFile(string path){
   ofstream outfile;
   outfile.open (path);
   for(auto data : all_data){
-    outfile << data.uid<<"\t"<<data.start<<"\t"<<data.end<<"\t"
+    outfile << data.uid<<"\t"<<data.s_id<<"\t"<<data.start<<"\t"<<data.end<<"\t"
       <<data.prev_end<<"\t"<<data.x.nnz();
     for(auto iter = data.x.begin(); iter != data.x.end(); ++iter){
-      outfile<<"\t"<<iter->first <<"\t" << iter->second;
-    }
-    outfile << "\t" << data.integral_x.nnz();
-    for(auto iter = data.integral_x.begin(); 
-        iter != data.integral_x.end(); ++iter){
       outfile<<"\t"<<iter->first <<"\t" << iter->second;
     }
     outfile << endl;
