@@ -5,6 +5,9 @@
       "num_kernel": 30,
       "history_size": 20
   },
+  "construct_feature":{
+    "output_path" : "./feature"
+    },
     "feature_based":{
       "lr_w": 0.00001,
       "momentum": 0.8,
