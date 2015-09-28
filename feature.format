@@ -1,0 +1,5 @@
+""" The output feature file is stored in the following format
+""" Note that the "," is for convenience, the delimiter is "\t" 
+""" we have two sets of features because one of them is the feature for current session
+""" and the other is aggregated features used for integraition (quantized summation, actually)
+uid, start, end, prev_end, N, ind1, val1, ..., indN, valN, M, ind1, val1, ..., indM, valM
