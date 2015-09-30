@@ -6,10 +6,11 @@
       "history_size": 20
   },
   "construct_feature":{
-    "output_path" : "./feature"
+    "output_path" : "./hawkes_feature"
     },
     "feature_based":{
-      "lr_w": 0.00001,
+      "lr_w": 0.0000001,
+      "lr_lambda": 0.000001,
       "momentum": 0.8,
       "max_iter": 100
     },
