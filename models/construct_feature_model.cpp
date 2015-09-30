@@ -3,6 +3,7 @@
 #include "model_base.h"
 #include "sparse_vector.h"
 #include <fstream>
+#include <omp.h>
 #include <ctime>
 #include <algorithm> 
 #include <unordered_map>
@@ -177,9 +178,9 @@ void ConstructFeatureModel::buildVectorizedDataset(){
    n_user ++;
    #pragma omp critical
    {
-   if(n_user % 500 == 0){
+   if(n_user % 1000 == 0){
        auto n = time(nullptr);
-       cerr <<"buildVectorizedDataset processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
+       cerr <<"TID="<<omp_get_thread_num()<<" processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
        s = n;
    }
    }
