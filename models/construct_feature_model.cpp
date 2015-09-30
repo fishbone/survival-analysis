@@ -112,7 +112,7 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
-  int target_bin = max(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH));
+  int target_bin = min(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH) );
   // copy session_feature and append day_feature
   vector<Feature> auxFeature(sessions[s_id].session_features);
   auxFeature.insert(auxFeature.end(), 
@@ -136,7 +136,7 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
   
   double prev_end = sessions[s_id - 1].end.hours();
   assert(_hours >= prev_end);
-  int target_bin = max(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
+  int target_bin = min(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
   // get the feature at bin 0 then for b = 1 : target_bin
   // add them add
   vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, 
@@ -183,7 +183,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
      double prev_end = all_sessions[i-1].end.hours();
      double start = all_sessions[i].start.hours();
      double end = all_sessions[i].end.hours();
-     int bin = (start - prev_end)/(double)BIN_WIDTH;
+     int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN-1);
      // ctr :(uid, s_id, y, bin, start, end)
      DataPoint data;
      // info about this data point
