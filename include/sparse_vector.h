@@ -17,12 +17,10 @@ class SparseVector {
   public:
 
     SparseVector(){ }
-    SparseVector(int n, std::vector<Feature> *s){
-        for(int i = 0; i != n; ++i){
-            for(auto &f : s[i]){
-                _feature.insert(f);
-            }
-        }
+    SparseVector(std::vector<Feature> &s){
+      for(auto &f : s){
+        _feature.insert(f);
+      }
     }
     SparseVector(std::unordered_map<int, double> keyVal){
       for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
@@ -40,11 +38,11 @@ class SparseVector {
     VecIterator end() const{
       return _feature.end();
     }
-    
+
     static SparseVector rand_init(int num_feature);
 
     static SparseVector zero_init(int num_feature);
-    
+
     int nnz() const;
 
     double getVal(int ind);
@@ -54,16 +52,16 @@ class SparseVector {
     double & operator[](int ind);
 
     friend SparseVector operator*(const SparseVector &lhs, double scale);
-    
+
     friend SparseVector operator/(const SparseVector &lhs, double scale);
-    
+
 
     friend SparseVector operator-(const SparseVector &lhs, const SparseVector& rhs);
 
     SparseVector& operator+=(const SparseVector& vec);
 
     SparseVector& operator-=(const SparseVector& vec);
-    
+
     friend std::ostream & operator<<(std::ostream &os, const SparseVector &vec);
 
     void threshold(double T){
