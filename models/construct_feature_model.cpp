@@ -238,16 +238,11 @@ void ConstructFeatureModel::buildDataset(){
   buildVectorizedDataset();
 
   //it's more convenient to compute hawkes features
-//  writeToFile(_config["construct_feature"]["output_path"].as<string>());
+  writeToFile(_config["construct_feature"]["output_path"].as<string>());
 }
 
 int ConstructFeatureModel::train(const UserContainer *data){
   this->buildDataset();
-  cerr <<train_data[0].x<<endl;
-  cerr << train_data[0].y<<endl;
-  cerr <<train_data[0].integral_x<<endl;
-  string A("__SIZE__");
-  cout <<getFeatureOffset(A)<<endl;
   return 0;
 }   
 
@@ -261,22 +256,37 @@ vector<DataPoint> & ConstructFeatureModel::getTestSet(){
 
 void ConstructFeatureModel::writeToFile(string path){
   // sort the vector<DataPoint> in chronological order
-  /*
-  cerr <<"sort the data in chronological order"<<endl;
-  sort(all_data.begin(), all_data.end());
-  cerr <<"the data is sorted!!!"<<endl;
-  ofstream outfile;
-  outfile.open (path);
-  for(auto data : all_data){
-    outfile << data.uid<<"\t"<<data.s_id<<"\t"<<data.start<<"\t"<<data.end<<"\t"
-      <<data.prev_end<<"\t"<<data.x.nnz();
+//  cerr <<"sort the data in chronological order"<<endl;
+//  sort(all_data.begin(), all_data.end());
+//  cerr <<"the data is sorted!!!"<<endl;
+  
+  ofstream tr_fea, tr_y, te_fea, te_y;
+  tr_fea.open (path+string("/train_fea"));
+  te_fea.open (path+string("/test_fea"));
+  tr_y.open (path+string("/train_y"));
+  te_y.open (path+string("/test_y"));
+  for(auto data : train_data){
+    tr_fea << data.uid<<"\t"<<data.s_id<<"\t"<<data.start<<"\t"<<data.end<<"\t"
+      <<data.x.nnz();
+    tr_y << data.y<<endl;
     for(auto iter = data.x.begin(); iter != data.x.end(); ++iter){
-      outfile<<"\t"<<iter->first <<"\t" << iter->second;
+      tr_fea<<"\t"<<iter->first <<"\t" << iter->second;
     }
-    outfile << endl;
+    tr_fea << endl;
   }
-  outfile.close();
-  */
+  for(auto data : test_data){
+    te_fea << data.uid<<"\t"<<data.s_id<<"\t"<<data.start<<"\t"<<data.end<<"\t"
+      <<data.x.nnz();
+    te_y << data.y<<endl;
+    for(auto iter = data.x.begin(); iter != data.x.end(); ++iter){
+      te_fea<<"\t"<<iter->first <<"\t" << iter->second;
+    }
+    te_fea << endl;
+  }
+  tr_fea.close();
+  tr_y.close();
+  te_fea.close();
+  te_y.close();
 }
 
 
