@@ -21,9 +21,6 @@ int getFeatureOffset(std::string &name){
         //    }
 }
 
-int getFeatureNumber(){
-    //    {
-    //        boost::shared_lock<boost::shared_mutex> lock(rw_lock);
+int getNumberOfFeature(){
         return ffmap.size();
-        //    }
 }
