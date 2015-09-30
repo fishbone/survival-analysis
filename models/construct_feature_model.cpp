@@ -51,8 +51,113 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
   //then return the SparseVector representation
   jointFeature.insert(jointFeature.end(),
       hawkesFeature.begin(), hawkesFeature.end());
-
   return SparseVector(jointFeature);
+}
+void ConstructFeatureModel::insertEntry(DatasetContainer & dataset, 
+    long uid, int session_index, int fea_ind, double fea_val){
+  assert(dataset.find(uid) != dataset.end());
+  dataset[uid][session_index].insert(fea_ind, fea_val);
+    return ;
+} 
+
+void ConstructFeatureModel::insertEntry(DatasetContainer & dataset, 
+    long uid, int session_index, SparseVector &vec){
+  assert(dataset.find(uid) != dataset.end());
+  dataset[uid][session_index] = vec;
+  return ;
+} 
+
+void ConstructFeatureModel::buildIntegralHawkesFeature(DatasetContainer & dataset){
+  //
+  const UserContainer *data = _train_data;
+  int n_user = 0;
+  vector<long> all_uids; // for openMP use
+  for(auto iter = data->begin(); iter != data->end(); ++iter){
+    long id = iter->first;
+    all_uids.push_back(id);
+    dataset[id] = vector<SparseVector>(iter->second.get_sessions().size());
+  }
+  random_shuffle ( all_uids.begin(), all_uids.end());
+
+#pragma omp parallel for
+  for(int i = 0 ; i < (int)all_uids.size(); i++){
+    n_user ++;
+    if(n_user % 10000 == 0){
+      cerr << n_user <<endl;
+    }
+    long id = all_uids[i];
+    double prev_time = 0;
+    int session_index = 0;
+    for (auto j = data->at(id).get_sessions().begin();                         
+        j!= data->at(id).get_sessions().end(); ++j){
+      if (session_index == 0){                                                       
+        prev_time = j->end.hours();                                        
+      } else{ 
+        int target_bin = min(NUM_BIN - 1, (int)((j->start.hours() - prev_time)/(double)BIN_WIDTH));
+        double integral_value = 0.0;
+        SparseVector vec;
+        for(int b = 0 ; b < target_bin ; b++){
+          SparseVector _vec = getHawkesFeatureAtTime(id, session_index, prev_time + BIN_WIDTH * (b + 1));
+          vec += _vec;
+        }
+        insertEntry(dataset, id, session_index, vec);
+        prev_time = j->end.hours();
+      }
+      session_index ++;
+    }
+  }
+}
+
+void ConstructFeatureModel::buildHawkesFeature(DatasetContainer & dataset){
+  //
+  const UserContainer *data = _train_data;
+  vector<long> all_uids; // for openMP use
+  for(auto iter = data->begin(); iter != data->end(); ++iter){
+    long id = iter->first;
+    all_uids.push_back(id);
+    dataset[id] = vector<SparseVector>(iter->second.get_sessions().size() );
+  }
+
+  random_shuffle(all_uids.begin(), all_uids.end()); // for load-balancing
+#pragma omp parallel for 
+  for(int i = 0 ; i < (int)all_uids.size(); i++){
+    double prev_time = 0;
+    int session_index = 0;
+    long id = all_uids[i];
+    for (auto j = data->at(id).get_sessions().begin();
+         j!= data->at(id).get_sessions().end(); ++j){
+      if (session_index == 0){                                                       
+        prev_time = j->end.hours();                                        
+      } else{ 
+        SparseVector vec = getHawkesFeatureAtTime(id, session_index, j->start.hours());
+        insertEntry(dataset, id, session_index, vec);
+      }
+      session_index ++;
+    }
+  } 
+}
+
+
+void ConstructFeatureModel::buildLabel(DatasetContainer & Y){
+  double prev_time = 0.0;
+  const UserContainer *data = _train_data;
+  for(auto iter = data->begin(); iter != data->end(); ++iter){
+    int session_index = 0;
+    long id = iter->first;
+    Y[id] = vector<SparseVector>(iter->second.get_sessions().size());
+    for (auto j = iter->second.get_sessions().begin();                         
+        j!= iter->second.get_sessions().end(); ++j){                                                  
+      if (session_index == 0){                                                       
+        prev_time = j->end.hours();                                        
+      } else{ 
+        assert(j->start.hours() >= prev_time);
+        insertEntry(Y, id, session_index, LABEL_INDEX, j->start.hours() - prev_time);
+        prev_time = j->end.hours();
+      }
+      session_index ++;
+    }
+  } 
+>>>>>>> c0cf18c1f514bc4fa34a1e751a4e53e947e3c86b
 }
 
 //get features other than Hawkes for given (uid, session_id, _time);

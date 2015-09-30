@@ -1,8 +1,5 @@
 #! /bin/bash
-./main --models=model_test \
-       --models=piecewise_constant_model \
-       --models=global_constant_model \
-       --models=user_constant_model \
+./main --models=construct_feature_model \
        --evaluations=eval_loglik \
        --train_start=20150601 \
        --train_end=20150602 \
