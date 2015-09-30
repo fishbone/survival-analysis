@@ -6,8 +6,13 @@ typedef std::unordered_map<int, std::string> MapFeature;
 FeatureMap ffmap;
 MapFeature mmap;
 int getFeatureOffset(std::string &name){
-    if(ffmap.count(name))
-        return ffmap[name];
-    ffmap[name] = ffmap.size();
-    return ffmap[name];
+    int offset = 0;
+#pragma omp critical
+    {
+        if(ffmap.count(name))
+            offset = ffmap[name];
+        else
+            offset = ffmap[name] = ffmap.size();
+    }
+    return offset;
 }

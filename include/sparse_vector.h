@@ -22,6 +22,7 @@ class SparseVector {
       for(auto &f : s){
         _feature.insert(f);
       }
+    }
     SparseVector(int n, std::vector<Feature> *s){
         va_list arguments;
         va_start(arguments, s);
