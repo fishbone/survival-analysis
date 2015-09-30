@@ -10,21 +10,17 @@ typedef std::unordered_map<int, std::string> MapFeature;
 FeatureMap ffmap;
 MapFeature mmap;
 int getFeatureOffset(std::string &name){
-    {
-        boost::shared_lock<boost::shared_mutex> lock(rw_lock);
+    //    {
+    //        boost::shared_lock<boost::shared_mutex> lock(rw_lock);
         if(ffmap.count(name))
             return ffmap[name];
-    }
-    {
-        boost::lock_guard<boost::shared_mutex> lock(rw_lock);
+        //    }
+        //    {
+        //        boost::lock_guard<boost::shared_mutex> lock(rw_lock);
         return ffmap[name] = ffmap.size();
-    }
+        //    }
 }
 
 int getNumberOfFeature(){
-    {
-        boost::shared_lock<boost::shared_mutex> lock(rw_lock);
         return ffmap.size();
-    }
-
 }

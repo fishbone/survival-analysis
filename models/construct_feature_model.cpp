@@ -3,6 +3,7 @@
 #include "model_base.h"
 #include "sparse_vector.h"
 #include <fstream>
+#include <ctime>
 #include <algorithm> 
 #include <unordered_map>
 #include <utility>
@@ -160,7 +161,6 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
 
 
 void ConstructFeatureModel::buildVectorizedDataset(){
- int n_user = 0; 
  //tmpMap is for OpenMP acceleration
  unordered_map<long, vector<DataPoint>> tmpMap;
  vector<long> all_uids;
@@ -168,12 +168,20 @@ void ConstructFeatureModel::buildVectorizedDataset(){
    tmpMap[iter->first] = vector<DataPoint>();
    all_uids.push_back(iter->first);
  }
-
-#pragma omp parallel for
+#pragma omp parallel
+ {
+ int n_user = 0; 
+ auto s = time(nullptr);
+#pragma omp for
  for(int i = 0 ; i < (int)all_uids.size(); ++i){
    n_user ++;
-   if(i % 100 == 0){
-     cerr <<"buildVectorizedDataset processed_user = "<<i<<endl;
+   #pragma omp critical
+   {
+   if(n_user % 500 == 0){
+       auto n = time(nullptr);
+       cerr <<"buildVectorizedDataset processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
+       s = n;
+   }
    }
    long uid = all_uids[i];
    User &user = _concat_data->at(uid);
@@ -198,6 +206,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
      data.integral_x = getIntegralFeatureAtTime(uid, i, start);
      tmpMap[uid].push_back(data);
    }
+ }
  }
  for(int i = 0 ; i < (int)all_uids.size(); ++i){
    long uid = all_uids[i];
