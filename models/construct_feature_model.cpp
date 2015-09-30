@@ -104,13 +104,13 @@ void ConstructFeatureModel::buildHawkesFeature(DatasetContainer & dataset){
   }
 
   random_shuffle(all_uids.begin(), all_uids.end()); // for load-balancing
-#pragma omp parallel for
+#pragma omp parallel for 
   for(int i = 0 ; i < (int)all_uids.size(); i++){
     double prev_time = 0;
     int session_index = 0;
     long id = all_uids[i];
-    for (auto j = data->at(id).get_sessions().begin();                         
-        j!= data->at(id).get_sessions().end(); ++j){                                                  
+    for (auto j = data->at(id).get_sessions().begin();
+         j!= data->at(id).get_sessions().end(); ++j){
       if (session_index == 0){                                                       
         prev_time = j->end.hours();                                        
       } else{ 

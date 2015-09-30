@@ -21,6 +21,7 @@ void HawkesProcessModel::updateParameter(const long user_id, double scale){
     lambda_base[user_id][b] = max(lambda_base[user_id][b], 0.0);
   }
 }
+
 double HawkesProcessModel::evaluateLoglik(){
   const UserContainer * data  = this->_test_data;
   double loglik =0.0;
@@ -60,6 +61,7 @@ HawkesProcessModel::HawkesProcessModel(){
   }
 
 }
+
 int HawkesProcessModel::train(const UserContainer *data){
 
   // the base rate for each (user,bin) pair is initialized using 

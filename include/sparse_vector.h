@@ -1,6 +1,7 @@
 #ifndef __SPARSE_VECTOR_H__
 #define __SPARSE_VECTOR_H__
 #include <vector>
+#include <stdarg.h>
 #include <fstream>
 #include <unordered_map>
 #include <iterator>
@@ -18,11 +19,15 @@ class SparseVector {
 
     SparseVector(){ }
     SparseVector(int n, std::vector<Feature> *s){
+        va_list arguments;
+        va_start(arguments, s);
         for(int i = 0; i != n; ++i){
-            for(auto &f : s[i]){
+            for(auto &f : *s){
                 _feature.insert(f);
             }
+            s = va_arg(arguments, std::vector<Feature> *);
         }
+        va_end(arguments);
     }
     SparseVector(std::unordered_map<int, double> keyVal){
       for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
