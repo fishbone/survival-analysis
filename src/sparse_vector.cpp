@@ -65,8 +65,8 @@ SparseVector operator*(const SparseVector &lhs, double scale){
 
 SparseVector operator/(const SparseVector& lhs, double scale){      
   SparseVector vec(lhs);                                                         
-  assert(scale != 0.0);                                                     
-  for(auto iter = lhs.begin(); iter != vec.end(); ++iter){                
+  assert(scale != 0.0);
+  for(auto iter = lhs.begin(); iter != lhs.end(); ++iter){                
     vec[iter->first] /= scale;                                
   }                                                                         
   return vec;                                                               
@@ -97,7 +97,7 @@ SparseVector & SparseVector::operator+=(const SparseVector & rhs){
 
 SparseVector & SparseVector::operator-=(const SparseVector & rhs){
   for(auto iter = rhs.begin(); iter != rhs.end(); ++iter){
-    (*this)[iter->first] -= iter->second;
+      (*this)[iter->first] -= iter->second;
   }
   return *this;
 }

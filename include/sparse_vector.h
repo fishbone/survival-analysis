@@ -23,9 +23,10 @@ class SparseVector {
     }
     SparseVector(std::vector<Feature> &s){
         _feature.set_empty_key(-1);
-      for(auto &f : s){
-        _feature.insert(f);
-      }
+        for(auto &f : s){
+            assert(f.first >= 0);
+            _feature.insert(f);
+        }
     }
     SparseVector(int n, std::vector<Feature> *s){
         _feature.set_empty_key(-1);
@@ -33,6 +34,7 @@ class SparseVector {
         va_start(arguments, s);
         for(int i = 0; i != n; ++i){
             for(auto &f : *s){
+                assert(f.first >= 0);
                 _feature.insert(f);
             }
             s = va_arg(arguments, std::vector<Feature> *);
@@ -42,20 +44,20 @@ class SparseVector {
     SparseVector(std::unordered_map<int, double> keyVal){
         _feature.set_empty_key(-1);
         
-      for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
+        for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
 
-        _feature[iter->first] = iter->second;
+            _feature[iter->first] = iter->second;
 
-      }
+        }
     }
 
 
     VecIterator begin() const{
-      return _feature.begin();
+        return _feature.begin();
     }
 
     VecIterator end() const{
-      return _feature.end();
+        return _feature.end();
     }
 
     static SparseVector rand_init(int num_feature);
@@ -84,9 +86,9 @@ class SparseVector {
     friend std::ostream & operator<<(std::ostream &os, const SparseVector &vec);
 
     void threshold(double T){
-      for(auto iter : _feature){
-        _feature[iter.first] = std::max(iter.second, T);
-      }
+        for(auto iter : _feature){
+            _feature[iter.first] = std::max(iter.second, T);
+        }
     }
 
     static double dotProduct(SparseVector &, SparseVector &) ;

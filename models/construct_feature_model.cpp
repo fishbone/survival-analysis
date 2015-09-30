@@ -178,7 +178,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
    n_user ++;
    #pragma omp critical
    {
-   if(n_user % 1000 == 0){
+   if(n_user % 500 == 0){
        auto n = time(nullptr);
        cerr <<"TID="<<omp_get_thread_num()<<" processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
        s = n;
