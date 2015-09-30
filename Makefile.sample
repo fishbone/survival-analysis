@@ -1,6 +1,6 @@
 CXX=g++
-CFLAGS=-std=c++11  -g -ggdb -O0
-LDFLAGS=-lboost_date_time -lboost_system -lboost_filesystem -lboost_program_options
+CFLAGS=-std=c++11  -g -ggdb -O0 -fopenmp
+LDFLAGS=-lboost_date_time -lboost_system -lboost_filesystem -lboost_program_options 
 #LDFLAGS=-lglog -lprotobuf -lprotoc -lzmq -llz4 -lcityhash 
 # test-model: models/test-model.cpp $(PS_LIB) $(PS_MAIN)
 # 	$(CXX) $(CFLAGS) $(LDFLAGS) -fopenmp $^ -o $@
