@@ -3,5 +3,6 @@
 #include <utility>
 #include <string>
 int getFeatureOffset(std::string &name);
+int getFeatureNumber();
 typedef std::pair<int, double> Feature;
 #endif

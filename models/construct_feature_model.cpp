@@ -169,8 +169,8 @@ void ConstructFeatureModel::buildVectorizedDataset(){
 #pragma omp parallel for
  for(int i = 0 ; i < (int)all_uids.size(); ++i){
    n_user ++;
-   if(n_user % 10000 == 0){
-     cerr <<"buildVectorizedDataset processed_user = "<<n_user<<endl;
+   if(i % 100 == 0){
+     cerr <<"buildVectorizedDataset processed_user = "<<i<<endl;
    }
    long uid = all_uids[i];
    User &user = _concat_data->at(uid);
