@@ -52,6 +52,7 @@ class ConstructFeatureModel : public ModelBase{
 
     void buildIntegralHawkesFeature(DatasetContainer &);
 
+
     std::vector<DataPoint> buildVectorRepresentation(DatasetContainer &, DatasetContainer &, DatasetContainer &);
 
     void buildLabel(DatasetContainer &);
