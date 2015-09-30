@@ -24,8 +24,11 @@ void ConstructFeatureModel::initParams(){
     kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));                       
     kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
     kernel_name.push_back("rbf"+ std::to_string(pow(2, _exp - 1)));
+    getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_24h"+ std::to_string(pow(2, _exp - 1)));
+    getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_7d"+ std::to_string(pow(2, _exp - 1)));
+    getFeatureOffset(kernel_name.back());
     _exp++;                                                                        
   } 
   num_kernel = (int)kernels.size();
