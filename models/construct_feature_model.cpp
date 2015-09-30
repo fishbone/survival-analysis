@@ -22,7 +22,10 @@ void ConstructFeatureModel::initParams(){
   for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){                           
     kernels.push_back(make_pair(rbf, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));                       
-    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));                        
+    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
+    kernel_name.push_back("rbf"+ std::to_string(pow(2, _exp - 1)));
+    kernel_name.push_back("rbf_24h"+ std::to_string(pow(2, _exp - 1)));
+    kernel_name.push_back("rbf_7d"+ std::to_string(pow(2, _exp - 1)));
     _exp++;                                                                        
   } 
   num_kernel = (int)kernels.size();
@@ -32,151 +35,47 @@ ConstructFeatureModel::ConstructFeatureModel() {
   // default parameters
   num_kernel = 0;
   kernels = vector<pair<Kernels, double>>();                                       
-
   //initialize the model
   initParams();
 }
 
+//get feature in SparsesVector format for give (uid, session_id, _time)
+SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
+    int s_id, double _hours){
+  
+  vector<Feature> auxFeature = getAuxFeatureAtTime(uid, s_id, _hours);
+  vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
+  vector<Feature> jointFeature(auxFeature);
+  
+  //concatenate haekesFeature and auxFeature 
+  //then return the SparseVector representation
+  jointFeature.insert(jointFeature.end(),
+      hawkesFeature.begin(), hawkesFeature.end());
 
-void ConstructFeatureModel::insertEntry(DatasetContainer & dataset, 
-    long uid, int session_index, int fea_ind, double fea_val){
-  assert(dataset.find(uid) != dataset.end());
-  dataset[uid][session_index].insert(fea_ind, fea_val);
-    return ;
-} 
-
-void ConstructFeatureModel::insertEntry(DatasetContainer & dataset, 
-    long uid, int session_index, SparseVector &vec){
-  assert(dataset.find(uid) != dataset.end());
-  dataset[uid][session_index] = vec;
-  return ;
-} 
-
-void ConstructFeatureModel::buildIntegralHawkesFeature(DatasetContainer & dataset){
-  //
-  const UserContainer *data = _train_data;
-  int n_user = 0;
-  vector<long> all_uids; // for openMP use
-  for(auto iter = data->begin(); iter != data->end(); ++iter){
-    long id = iter->first;
-    all_uids.push_back(id);
-    dataset[id] = vector<SparseVector>(iter->second.get_sessions().size());
-  }
-  random_shuffle ( all_uids.begin(), all_uids.end());
-
-#pragma omp parallel for
-  for(int i = 0 ; i < (int)all_uids.size(); i++){
-    n_user ++;
-    if(n_user % 10000 == 0){
-      cerr << n_user <<endl;
-    }
-    long id = all_uids[i];
-    double prev_time = 0;
-    int session_index = 0;
-    for (auto j = data->at(id).get_sessions().begin();                         
-        j!= data->at(id).get_sessions().end(); ++j){
-      if (session_index == 0){                                                       
-        prev_time = j->end.hours();                                        
-      } else{ 
-        int target_bin = min(NUM_BIN - 1, (int)((j->start.hours() - prev_time)/(double)BIN_WIDTH));
-        double integral_value = 0.0;
-        SparseVector vec;
-        for(int b = 0 ; b < target_bin ; b++){
-          SparseVector _vec = getHawkesFeatureAtTime(id, session_index, prev_time + BIN_WIDTH * (b + 1));
-          vec += _vec;
-        }
-        insertEntry(dataset, id, session_index, vec);
-        prev_time = j->end.hours();
-      }
-      session_index ++;
-    }
-  }
+  return SparseVector(jointFeature);
 }
 
-void ConstructFeatureModel::buildHawkesFeature(DatasetContainer & dataset){
-  //
-  const UserContainer *data = _train_data;
-  vector<long> all_uids; // for openMP use
-  for(auto iter = data->begin(); iter != data->end(); ++iter){
-    long id = iter->first;
-    all_uids.push_back(id);
-    dataset[id] = vector<SparseVector>(iter->second.get_sessions().size() );
-  }
-
-  random_shuffle(all_uids.begin(), all_uids.end()); // for load-balancing
-#pragma omp parallel for
-  for(int i = 0 ; i < (int)all_uids.size(); i++){
-    double prev_time = 0;
-    int session_index = 0;
-    long id = all_uids[i];
-    for (auto j = data->at(id).get_sessions().begin();                         
-        j!= data->at(id).get_sessions().end(); ++j){                                                  
-      if (session_index == 0){                                                       
-        prev_time = j->end.hours();                                        
-      } else{ 
-        SparseVector vec = getHawkesFeatureAtTime(id, session_index, j->start.hours());
-        insertEntry(dataset, id, session_index, vec);
-      }
-      session_index ++;
-    }
-  } 
+//get features other than Hawkes for given (uid, session_id, _time);
+vector<Feature> ConstructFeatureModel::getAuxFeatureAtTime(long uid,
+    int s_id, double _time){
+  const UserContainer *data = _concat_data;
+  const vector<Session> & sessions = data->at(uid).get_sessions();
+  assert(s_id < (int)sessions.size());
+  // copy session_feature and append day_feature
+  vector<Feature> auxFeature(sessions[s_id].session_features);
+  auxFeature.insert(auxFeature.end(), 
+      sessions[s_id].day_features->begin(), sessions[s_id].day_features->end());
+  return auxFeature;
 }
 
+//get features other than Hawkes for given (uid, session_id, _time);
+vector<Feature> ConstructFeatureModel::getHawkesFeatureAtTime(long uid,
+    int s_id, double _time){
 
-void ConstructFeatureModel::buildLabel(DatasetContainer & Y){
-  double prev_time = 0.0;
-  const UserContainer *data = _train_data;
-  for(auto iter = data->begin(); iter != data->end(); ++iter){
-    int session_index = 0;
-    long id = iter->first;
-    Y[id] = vector<SparseVector>(iter->second.get_sessions().size());
-    for (auto j = iter->second.get_sessions().begin();                         
-        j!= iter->second.get_sessions().end(); ++j){                                                  
-      if (session_index == 0){                                                       
-        prev_time = j->end.hours();                                        
-      } else{ 
-        assert(j->start.hours() >= prev_time);
-        insertEntry(Y, id, session_index, LABEL_INDEX, j->start.hours() - prev_time);
-        prev_time = j->end.hours();
-      }
-      session_index ++;
-    }
-  } 
-}
-
-vector<DataPoint> ConstructFeatureModel::buildVectorRepresentation(DatasetContainer &X,
-    DatasetContainer &integral_X, DatasetContainer &Y){
-  vector<DataPoint> dataset;
-  const UserContainer * data = _train_data;
-  for(auto iter : X){
-    long uid = iter.first;
-    const vector<Session> & sessions = data->at(uid).get_sessions();
-    assert(Y.find(uid) != Y.end()); // any data in X should be also in Y...
-    for(int session_index = 0; session_index < iter.second.size(); session_index++){
-      if(session_index == 0)continue; // the first session is NOT used as training data...
-      assert(session_index < (int)sessions.size());
-      DataPoint _example;
-      _example.x = X[uid][session_index];
-//      _example.integral_x = integral_X[uid][session_index];
-      _example.uid = uid;
-      _example.s_id = session_index;
-      _example.start = sessions[session_index].start.seconds();
-      _example.end = sessions[session_index].end.seconds();
-      _example.prev_end = sessions[session_index - 1].end.seconds();
-      _example.y = Y[uid][session_index].getVal(LABEL_INDEX); // index 0 is where y resides...
-      _example.bin = min(NUM_BIN - 1, (int)(_example.y / (double)BIN_WIDTH));
-      dataset.push_back(_example);
-    }
-  }
-  return dataset;  
-}
-
-SparseVector ConstructFeatureModel::getHawkesFeatureAtTime(long uid, int s_id, double _time){
-
-  const UserContainer *data = _train_data;
+  const UserContainer *data = _concat_data;
   assert(data->find(uid) != data->end()); // uid not in training data !?
   const vector<Session> &train_sessions = data->at(uid).get_sessions();
-  SparseVector vec;
+  vector<Feature> vec;
   for(int k = 0 ; k < num_kernel ; k++){
     int count_history = 0;
     double kernelValue = 0.0;
@@ -186,37 +85,185 @@ SparseVector ConstructFeatureModel::getHawkesFeatureAtTime(long uid, int s_id, d
       kernelValue += evalKernel(kernels[k].first, kernels[k].second,
           train_sessions[j].start.hours(), _time);
     }
-    vec.insert(k, kernelValue/(double)count_history);
+    vec.push_back(Feature(getFeatureOffset(kernel_name[k]),
+          kernelValue/(double)count_history));
   }
   return vec;
 }
 
-int ConstructFeatureModel::train(const UserContainer *data){
-  this->buildDataset();
-  return 0;
-}   
+SparseVector ConstructFeatureModel::getIntegralFeatureAtTime(long uid,
+    int s_id, double _hours){
+  vector<Feature> auxFeature = getIntegralAuxFeatureAtTime(uid, s_id, _hours);
+  vector<Feature> hawkesFeature = getIntegralHawkesFeatureAtTime(uid, s_id, _hours);
+  vector<Feature> jointFeature(auxFeature);
+  jointFeature.insert(jointFeature.end(),
+      hawkesFeature.begin(), hawkesFeature.end());
 
+  return SparseVector(jointFeature);
+}
+
+vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
+   int s_id, double _hours){
+  assert(_hours >= 0);
+  
+  const UserContainer *data = _concat_data;
+  const vector<Session> & sessions = data->at(uid).get_sessions();
+  assert(s_id > 0);
+  assert(s_id < (int)sessions.size());
+  double prev_end = sessions[s_id - 1].end.hours();
+  int target_bin = max(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH));
+  // copy session_feature and append day_feature
+  vector<Feature> auxFeature(sessions[s_id].session_features);
+  auxFeature.insert(auxFeature.end(), 
+      sessions[s_id].day_features->begin(), sessions[s_id].day_features->end());
+
+  //since session_feature and day_feature are the same within the same
+  //session, we just scale by a factor of target_bin to get the desired number
+  for(int i = 0 ; i < (int)auxFeature.size(); i++){
+    auxFeature[i].second *= (target_bin + 1);
+  }
+  return auxFeature;
+}
+
+vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
+    int s_id, double _hours){
+  assert(_hours >= 0);
+  const UserContainer *data = _concat_data;
+  const vector<Session> & sessions = data->at(uid).get_sessions();
+  assert(s_id > 0);
+  assert(s_id < (int)sessions.size());
+  
+  double prev_end = sessions[s_id - 1].end.hours();
+  assert(_hours >= prev_end);
+  int target_bin = max(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
+  // get the feature at bin 0 then for b = 1 : target_bin
+  // add them add
+  vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, 
+      s_id, prev_end + BIN_WIDTH);
+
+  for(int b = 1 ; b <= target_bin; b++){
+    vector<Feature> tmpHawkes = getHawkesFeatureAtTime(uid, 
+        s_id, prev_end + (b + 1) * BIN_WIDTH);
+    for(int i = 0 ; i < (int)tmpHawkes.size(); i++){
+      //for sanity check, 
+      if(hawkesFeature[i].first != tmpHawkes[i].first){
+        cerr<<hawkesFeature[i].first<<" "<<tmpHawkes[i].first<<endl;
+      }
+      assert(hawkesFeature[i].first == tmpHawkes[i].first);
+        hawkesFeature[i].second += tmpHawkes[i].second;
+    }
+  }
+  return hawkesFeature;
+}
+
+
+
+void ConstructFeatureModel::buildVectorizedDataset(){
+ int n_user = 0; 
+ //tmpMap is for OpenMP acceleration
+ unordered_map<long, vector<DataPoint>> tmpMap;
+ vector<long> all_uids;
+ for(auto iter = _concat_data->begin(); iter != _concat_data->end(); ++iter){ 
+   tmpMap[iter->first] = vector<DataPoint>();
+   all_uids.push_back(iter->first);
+ }
+
+#pragma omp parallel for
+ for(int i = 0 ; i < (int)all_uids.size(); ++i){
+   n_user ++;
+   if(n_user % 10000 == 0){
+     cerr <<"buildVectorizedDataset processed_user = "<<n_user<<endl;
+   }
+   long uid = all_uids[i];
+   User &user = _concat_data->at(uid);
+   const vector<Session> &all_sessions = user.get_sessions();
+   for(int i = 1 ; i < (int)all_sessions.size(); i++){
+     SparseVector x = getFeatureAtTime(uid, i, all_sessions[i].start.hours());
+     double prev_end = all_sessions[i-1].end.hours();
+     double start = all_sessions[i].start.hours();
+     double end = all_sessions[i].end.hours();
+     int bin = (start - prev_end)/(double)BIN_WIDTH;
+     // ctr :(uid, s_id, y, bin, start, end)
+     DataPoint data;
+     // info about this data point
+     data.uid = uid;
+     data.start = start;
+     data.end = end;
+     data.prev_end = prev_end;
+     data.bin = bin;
+     data.y = start - prev_end;
+     data.s_id = i;
+     data.x = getFeatureAtTime(uid, i, start);
+     data.integral_x = getIntegralFeatureAtTime(uid, i, start);
+     tmpMap[uid].push_back(data);
+   }
+ }
+ for(int i = 0 ; i < (int)all_uids.size(); ++i){
+   long uid = all_uids[i];
+   for(int j = 0 ; j < (int)tmpMap[uid].size() ; j++){
+     if(isTestSet[uid][tmpMap[uid][j].s_id] == true){
+       test_data.push_back(tmpMap[uid][j]);
+     }else{
+       train_data.push_back(tmpMap[uid][j]);
+     }
+   }
+ }
+ cerr <<"finished buildingVetorizedDatset ";
+ cerr <<"#train session = "<< train_data.size()<<" # test_session = "
+      <<test_data.size()<<endl;
+}
 
 void ConstructFeatureModel::buildDataset(){
   assert(_train_data != nullptr);
+  assert(_test_data != nullptr);
+  //concatenate train and test data to make our life easier.
+  //as we need to iterate historical sessions for constructing hawkes features
+  cerr <<"concatenate train and test data "
+       <<"as we need to iterate historical sessions "
+       <<"for constructing hawkes features" <<endl;
+  _concat_data = new UserContainer(*_train_data); // copy 
+  for(auto iter = _test_data->begin(); iter != _test_data->end(); ++iter){
+    long uid = iter->first;
+    if(_concat_data->find(uid) == _concat_data->end()){
+      continue;
+    }
+    isTestSet[uid] = unordered_map<int, bool>();
+    int train_session_size = (int)_concat_data->at(uid).get_sessions().size();
+    int offset = 0;
+    for(auto &test_session : _test_data->at(uid).get_sessions()){
+      _concat_data->at(uid).append_session(test_session);
+      isTestSet[uid][offset + train_session_size] = true;
+      offset ++;
+    }
+  }
+  cerr <<"buildVectorizedDataset"<<endl;
+  buildVectorizedDataset();
+
   //it's more convenient to compute hawkes features
-  DatasetContainer X;
-  DatasetContainer integral_X;
-  DatasetContainer Y;
-  cout <<"==========building the hawkes feature======="<<endl;
-  buildHawkesFeature(X);
-//  cout <<"==========building integral features========"<<endl;
-//  buildIntegralHawkesFeature(integral_X);
-  cout <<"==========building labels==================="<<endl;
-  buildLabel(Y);
-  cout <<"==========covert to vector representation==="<<endl;
-  all_data = buildVectorRepresentation(X,integral_X, Y);
-  cout <<"number of sessions = "<<all_data.size()<<endl;
-  writeToFile(_config["construct_feature"]["output_path"].as<string>());
+//  writeToFile(_config["construct_feature"]["output_path"].as<string>());
+}
+
+int ConstructFeatureModel::train(const UserContainer *data){
+  this->buildDataset();
+  cerr <<train_data[0].x<<endl;
+  cerr << train_data[0].y<<endl;
+  cerr <<train_data[0].integral_x<<endl;
+  string A("__SIZE__");
+  cout <<getFeatureOffset(A)<<endl;
+  return 0;
+}   
+
+vector<DataPoint> & ConstructFeatureModel::getTrainSet(){
+  return train_data;
+}
+
+vector<DataPoint> & ConstructFeatureModel::getTestSet(){
+  return test_data;
 }
 
 void ConstructFeatureModel::writeToFile(string path){
   // sort the vector<DataPoint> in chronological order
+  /*
   cerr <<"sort the data in chronological order"<<endl;
   sort(all_data.begin(), all_data.end());
   cerr <<"the data is sorted!!!"<<endl;
@@ -231,6 +278,7 @@ void ConstructFeatureModel::writeToFile(string path){
     outfile << endl;
   }
   outfile.close();
+  */
 }
 
 
