@@ -48,25 +48,39 @@ struct Time {
 
 struct Session {
     int binFromLastSession() const{
+        int bin = -1;
+        if(idx != 0){
+            bin = ((*session_list)[idx].start.hours() -
+                   (*session_list)[idx - 1].end.hours()) / BIN_WIDTH;
+        }
+        
         if(bin < NUM_BIN){
             return bin;    
         }else{
             return NUM_BIN - 1;    
         }
     }
-    Session(Time s, Time e, Session *p, std::vector<Feature> *u):
+
+    Session(Time s,
+            Time e,
+            std::vector<Session> *sess_list,
+            std::vector<Feature> *u):
             start(s),
-            end(e){
-        if(p == nullptr)
-            bin = -1;
-        else{
-            bin = (start.hours() - p->end.hours()) / BIN_WIDTH;
-        }
+            end(e),
+            session_list(sess_list){
         day_features = u;
+        idx = sess_list->size();
     }
+
+    Session *lastSession(){
+        if(idx == 0) return nullptr;
+        return &(*session_list)[idx];
+    }
+            
     Time start;
     Time end;
-    int bin;
+    size_t idx;
+    std::vector<Session> *session_list;
     std::vector<Feature> session_features;
     std::vector<Feature> *day_features;
 };
@@ -91,7 +105,11 @@ class User {
                          const char *session_date){
         Session *p = _visit_session.size() == 0 ? nullptr : &_visit_session.back();
         std::vector<Feature> *u = &(_user_info[session_date]);
-        _visit_session.push_back({Time(start), Time(end), p, u});
+        _visit_session.push_back({
+                Time(start),
+                        Time(end),
+                        &_visit_session,
+                        u});
         if(_visit_session.back().binFromLastSession() < -1){
             std::cerr<<id<<" "<<start<<std::endl;
             assert(false);

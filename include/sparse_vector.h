@@ -8,6 +8,7 @@
 #include <tuple>
 #include "user.h"
 #include <math.h>
+#include "feature.h"
 #include "jsoncons/json.hpp"
 
 typedef std::unordered_map<int, double>::const_iterator VecIterator;
@@ -16,7 +17,13 @@ class SparseVector {
   public:
 
     SparseVector(){ }
-
+    SparseVector(int n, std::vector<Feature> *s){
+        for(int i = 0; i != n; ++i){
+            for(auto &f : s[i]){
+                _feature.insert(f);
+            }
+        }
+    }
     SparseVector(std::unordered_map<int, double> keyVal){
       for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
 
