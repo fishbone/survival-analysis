@@ -247,30 +247,30 @@ SparseVector& SparseVector::mulEq(double scale, vector<int> * indices){
   return (*this);
 }
 
-SparseVector operator*(const SparseVector &lhs, double scale){      
+SparseVector&& operator*(const SparseVector &lhs, double scale){      
   SparseVector vec(lhs);
   for(auto iter = lhs.begin(); iter != lhs.end(); ++iter){                
     vec[iter->first] *= scale;                                
   }                                                                         
-  return vec;                                                               
+  return std::move(vec);                                                               
 }  
 
-SparseVector operator/(const SparseVector& lhs, double scale){      
+SparseVector&& operator/(const SparseVector& lhs, double scale){      
   SparseVector vec(lhs);                                                         
   assert(scale != 0.0);
   for(auto iter = lhs.begin(); iter != lhs.end(); ++iter){                
     vec[iter->first] /= scale;                                
   }                                                                         
-  return vec;                                                               
+  return std::move(vec);                                                              
 }                                                                           
 
 
-SparseVector operator-(const SparseVector & lhs, const SparseVector& rhs){
+SparseVector&& operator-(const SparseVector & lhs, const SparseVector& rhs){
   SparseVector vec(lhs);                                                  
   for(auto iter = rhs.begin(); iter != rhs.end(); ++iter){              
     vec[iter->first] -= iter->second;                                       
   }                                                                         
-  return vec;                                                               
+  return std::move(vec);                                                               
 }                                                                           
 
 std::ostream & operator<<(std::ostream &os, const SparseVector &vec){
