@@ -34,7 +34,7 @@ class FeatureBasedModel : public ModelBase{
 
     LambdaU lambda_base, g_lambda_base, d_lambda_base;
     
-    double lr_w, lr_lambda, momentum;
+    double lr_w, lr_lambda, momentum, l1_pen;
     
     int num_feature, max_iter;
     

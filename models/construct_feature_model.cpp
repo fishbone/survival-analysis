@@ -18,7 +18,7 @@ void ConstructFeatureModel::initParams(){
   num_kernel   = _config["hawkes"]["num_kernel"].as<int>();
   history_size = _config["hawkes"]["history_size"].as<int>();
   num_feature  = _config["hawkes"]["history_size"].as<int>();
-  
+
   // kernel functions
   int _exp = 0;                                                                    
   for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){                           
@@ -47,11 +47,11 @@ ConstructFeatureModel::ConstructFeatureModel() {
 //get feature in SparsesVector format for give (uid, session_id, _time)
 SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
     int s_id, double _hours){
-  
+
   vector<Feature> auxFeature = getAuxFeatureAtTime(uid, s_id, _hours);
   vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
   vector<Feature> jointFeature(auxFeature);
-  
+
   //concatenate haekesFeature and auxFeature 
   //then return the SparseVector representation
   jointFeature.insert(jointFeature.end(),
@@ -61,6 +61,7 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
 //get features other than Hawkes for given (uid, session_id, _time);
 vector<Feature> ConstructFeatureModel::getAuxFeatureAtTime(long uid,
     int s_id, double _time){
+//  return vector<Feature>();
   const UserContainer *data = _concat_data;
   const vector<Session> & sessions = data->at(uid).get_sessions();
   assert(s_id < (int)sessions.size());
@@ -106,9 +107,9 @@ SparseVector ConstructFeatureModel::getIntegralFeatureAtTime(long uid,
 }
 
 vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
-   int s_id, double _hours){
+    int s_id, double _hours){
   assert(_hours >= 0);
-  
+//  return vector<Feature>();  
   const UserContainer *data = _concat_data;
   const vector<Session> & sessions = data->at(uid).get_sessions();
   assert(s_id > 0);
@@ -135,7 +136,7 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
   const vector<Session> & sessions = data->at(uid).get_sessions();
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
-  
+
   double prev_end = sessions[s_id - 1].end.hours();
   assert(_hours >= prev_end);
   int target_bin = min(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
@@ -153,7 +154,7 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
         cerr<<hawkesFeature[i].first<<" "<<tmpHawkes[i].first<<endl;
       }
       assert(hawkesFeature[i].first == tmpHawkes[i].first);
-        hawkesFeature[i].second += tmpHawkes[i].second;
+      hawkesFeature[i].second += tmpHawkes[i].second;
     }
   }
   return hawkesFeature;
@@ -162,66 +163,66 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
 
 
 void ConstructFeatureModel::buildVectorizedDataset(){
- //tmpMap is for OpenMP acceleration
- unordered_map<long, vector<DataPoint>> tmpMap;
- vector<long> all_uids;
- for(auto iter = _concat_data->begin(); iter != _concat_data->end(); ++iter){ 
-   tmpMap[iter->first] = vector<DataPoint>();
-   all_uids.push_back(iter->first);
- }
+  //tmpMap is for OpenMP acceleration
+  unordered_map<long, vector<DataPoint>> tmpMap;
+  vector<long> all_uids;
+  for(auto iter = _concat_data->begin(); iter != _concat_data->end(); ++iter){ 
+    tmpMap[iter->first] = vector<DataPoint>();
+    all_uids.push_back(iter->first);
+  }
 #pragma omp parallel
- {
- int n_user = 0; 
- auto s = time(nullptr);
+  {
+    int n_user = 0; 
+    auto s = time(nullptr);
 #pragma omp for
- for(int i = 0 ; i < (int)all_uids.size(); ++i){
-   n_user ++;
-   #pragma omp critical
-   {
-   if(n_user % 500 == 0){
-       auto n = time(nullptr);
-       cerr <<"TID="<<omp_get_thread_num()<<" processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
-       s = n;
-   }
-   }
-   long uid = all_uids[i];
-   User &user = _concat_data->at(uid);
-   const vector<Session> &all_sessions = user.get_sessions();
-   for(int i = 1 ; i < (int)all_sessions.size(); i++){
-     SparseVector x = getFeatureAtTime(uid, i, all_sessions[i].start.hours());
-     double prev_end = all_sessions[i-1].end.hours();
-     double start = all_sessions[i].start.hours();
-     double end = all_sessions[i].end.hours();
-     int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN-1);
-     // ctr :(uid, s_id, y, bin, start, end)
-     DataPoint data;
-     // info about this data point
-     data.uid = uid;
-     data.start = start;
-     data.end = end;
-     data.prev_end = prev_end;
-     data.bin = bin;
-     data.y = start - prev_end;
-     data.s_id = i;
-     data.x = getFeatureAtTime(uid, i, start);
-     data.integral_x = getIntegralFeatureAtTime(uid, i, start);
-     tmpMap[uid].push_back(data);
-   }
- }
- }
- for(int i = 0 ; i < (int)all_uids.size(); ++i){
-   long uid = all_uids[i];
-   for(int j = 0 ; j < (int)tmpMap[uid].size() ; j++){
-     if(isTestSet[uid][tmpMap[uid][j].s_id] == true){
-       test_data.push_back(tmpMap[uid][j]);
-     }else{
-       train_data.push_back(tmpMap[uid][j]);
-     }
-   }
- }
- cerr <<"finished buildingVetorizedDatset ";
- cerr <<"#train session = "<< train_data.size()<<" # test_session = "
-      <<test_data.size()<<endl;
+    for(int i = 0 ; i < (int)all_uids.size(); ++i){
+      n_user ++;
+#pragma omp critical
+      {
+        if(n_user % 500 == 0){
+          auto n = time(nullptr);
+          cerr <<"TID="<<omp_get_thread_num()<<" processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
+          s = n;
+        }
+      }
+      long uid = all_uids[i];
+      User &user = _concat_data->at(uid);
+      const vector<Session> &all_sessions = user.get_sessions();
+      for(int i = 1 ; i < (int)all_sessions.size(); i++){
+        SparseVector x = getFeatureAtTime(uid, i, all_sessions[i].start.hours());
+        double prev_end = all_sessions[i-1].end.hours();
+        double start = all_sessions[i].start.hours();
+        double end = all_sessions[i].end.hours();
+        int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN-1);
+        // ctr :(uid, s_id, y, bin, start, end)
+        DataPoint data;
+        // info about this data point
+        data.uid = uid;
+        data.start = start;
+        data.end = end;
+        data.prev_end = prev_end;
+        data.bin = bin;
+        data.y = start - prev_end;
+        data.s_id = i;
+        data.x = getFeatureAtTime(uid, i, start);
+        data.integral_x = getIntegralFeatureAtTime(uid, i, start);
+        tmpMap[uid].push_back(data);
+      }
+    }
+  }
+  for(int i = 0 ; i < (int)all_uids.size(); ++i){
+    long uid = all_uids[i];
+    for(int j = 0 ; j < (int)tmpMap[uid].size() ; j++){
+      if(isTestSet[uid][tmpMap[uid][j].s_id] == true){
+        test_data.push_back(tmpMap[uid][j]);
+      }else{
+        train_data.push_back(tmpMap[uid][j]);
+      }
+    }
+  }
+  cerr <<"finished buildingVetorizedDatset ";
+  cerr <<"#train session = "<< train_data.size()<<" # test_session = "
+    <<test_data.size()<<endl;
 }
 
 void ConstructFeatureModel::buildDataset(){
@@ -230,8 +231,8 @@ void ConstructFeatureModel::buildDataset(){
   //concatenate train and test data to make our life easier.
   //as we need to iterate historical sessions for constructing hawkes features
   cerr <<"concatenate train and test data "
-       <<"as we need to iterate historical sessions "
-       <<"for constructing hawkes features" <<endl;
+    <<"as we need to iterate historical sessions "
+    <<"for constructing hawkes features" <<endl;
   _concat_data = new UserContainer(*_train_data); // copy 
   for(auto iter = _test_data->begin(); iter != _test_data->end(); ++iter){
     long uid = iter->first;
@@ -269,10 +270,10 @@ vector<DataPoint> & ConstructFeatureModel::getTestSet(){
 
 void ConstructFeatureModel::writeToFile(string path){
   // sort the vector<DataPoint> in chronological order
-//  cerr <<"sort the data in chronological order"<<endl;
-//  sort(all_data.begin(), all_data.end());
-//  cerr <<"the data is sorted!!!"<<endl;
-  
+  //  cerr <<"sort the data in chronological order"<<endl;
+  //  sort(all_data.begin(), all_data.end());
+  //  cerr <<"the data is sorted!!!"<<endl;
+
   ofstream tr_fea, tr_y, te_fea, te_y;
   tr_fea.open (path+string("/train_fea"));
   te_fea.open (path+string("/test_fea"));

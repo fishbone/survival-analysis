@@ -17,10 +17,11 @@ void FeatureBasedModel::initParams(){
   lr_lambda = _config["feature_based"]["lr_lambda"].as<double>();
   momentum  = _config["feature_based"]["momentum"].as<double>();
   max_iter  = _config["feature_based"]["max_iter"].as<int>();
+  l1_pen    = _config["feature_based"]["l1_pen"].as<double>();
   
   // weights for features
   //W  = SparseVector::rand_init(num_feature);
-  W  = SparseVector::zero_init(num_feature);
+  W  = SparseVector::zero_init(1);
   gW = SparseVector::zero_init(1);
   dW = SparseVector::zero_init(1);
 }
@@ -105,7 +106,7 @@ int FeatureBasedModel::train(const UserContainer *data){
     int n_data = 0;
     for(int i = 0 ; i < (int)train_data.size() ; i++){
       n_data ++;
-      if(n_data % 1000 == 0){
+      if(n_data % 10000 == 0){
         cout <<"Training with SGD: " << n_data<<"/"<<train_data.size()<<endl;
       }
       long uid = train_data[i].uid;
@@ -127,9 +128,25 @@ int FeatureBasedModel::train(const UserContainer *data){
         lambda_base[uid][b] += d_lambda_base[uid][b];
         lambda_base[uid][b]  = max(lambda_base[uid][b] ,1e-6);
       }
-      dW = dW *momentum - (int_x * BIN_WIDTH - x/divider) * lr_w * scale;
-      W += dW;
-      W.threshold(1e-6);
+//      cout << int_x<<endl;      
+      SparseVector gradW = int_x * BIN_WIDTH - x/divider;
+      vector<int> indices = gradW.getIndices();
+      dW.mulEq(momentum, &indices);
+      dW.subEq(gradW * lr_w * scale, &indices);
+      W.addEq(dW, &indices);
+//      dW = dW *momentum - (int_x * BIN_WIDTH - x/divider) * lr_w * scale;
+//      W += dW;
+      W.threshold(0, &indices);
+
+      W.proxMap(l1_pen, &indices);
+
+      //W.threshold(0, &indices);
+//      W.threshold(0);
+//      cerr << W.norm2()<<" "<<dW.norm2()<<endl;
+//      if((iter + 1) % 5 == 0){
+//        cout << W<<endl;
+//      }
+      //cout << W<<endl;
     }
   }
 
