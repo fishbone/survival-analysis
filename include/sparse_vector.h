@@ -111,11 +111,11 @@ class SparseVector {
 
     SparseVector div(double, std::vector<int> *indices = nullptr);
 
-    friend SparseVector&& operator*(const SparseVector &lhs, double scale);
+    friend SparseVector operator*(const SparseVector &lhs, double scale);
 
-    friend SparseVector&& operator/(const SparseVector &lhs, double scale);
+    friend SparseVector operator/(const SparseVector &lhs, double scale);
 
-    friend SparseVector&& operator-(const SparseVector &lhs, const SparseVector& rhs);
+    friend SparseVector operator-(const SparseVector &lhs, const SparseVector& rhs);
 
     SparseVector& operator+=(const SparseVector& vec);
 
