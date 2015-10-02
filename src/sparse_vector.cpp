@@ -60,8 +60,8 @@ SparseVector SparseVector::zero_init(int num_feature){
   return vec;                                                               
 }
 
-double & SparseVector::operator[](int ind){                                               
-  return _feature[ind];                                                                                               
+FLOAT & SparseVector::operator[](int ind){                                               
+    return _feature[ind];                                                                                               
 } 
 
 void SparseVector::deleteKey(int key){

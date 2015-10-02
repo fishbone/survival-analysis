@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdarg.h>
 #include <fstream>
+#include <unordered_map>
 #include <google/dense_hash_map>
 #include <iterator>
 #include <random>
@@ -12,7 +13,7 @@
 #include "feature.h"
 #include "jsoncons/json.hpp"
 
-typedef google::dense_hash_map<int, double>::const_iterator VecIterator;
+typedef google::dense_hash_map<int, FLOAT>::const_iterator VecIterator;
 
 class SparseVector {
   public:
@@ -23,6 +24,7 @@ class SparseVector {
     }
     SparseVector(std::vector<Feature> &s){
       _feature.set_empty_key(-1);
+      _feature.set_deleted_key(-2);
       for(auto &f : s){
         assert(f.first >= 0);
         _feature.insert(f);
@@ -42,7 +44,7 @@ class SparseVector {
       }
       va_end(arguments);
     }
-    SparseVector(std::unordered_map<int, double> keyVal){
+    SparseVector(std::unordered_map<int, double> &keyVal){
       _feature.set_empty_key(-1);
       _feature.set_deleted_key(-2);
       for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
@@ -73,7 +75,7 @@ class SparseVector {
 
     void insert(int ind, double val);
 
-    double & operator[](int ind);
+    FLOAT & operator[](int ind);
 
     double norm2(){
       double sum_sq = 0;
@@ -121,10 +123,10 @@ class SparseVector {
 
     friend std::ostream & operator<<(std::ostream &os, const SparseVector &vec);
 
-    void threshold(double T, std::vector<int> *indices = nullptr){
+    void threshold(FLOAT T, std::vector<int> *indices = nullptr){
       if(indices != nullptr){
         for(int ind : (*indices)){
-          _feature[ind] = std::max(_feature[ind], T);
+            _feature[ind] = std::max(_feature[ind], T);
         }
       }else {
         for(auto iter : _feature){
@@ -136,6 +138,6 @@ class SparseVector {
     static double dotProduct(SparseVector &, SparseVector &) ;
 
   private:
-    google::dense_hash_map<int, double> _feature; // ind:val map
+    google::dense_hash_map<int, FLOAT> _feature; // ind:val map
 };
 #endif

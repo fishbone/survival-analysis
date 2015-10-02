@@ -2,6 +2,7 @@
 #define __USER_CONSTANT_MODEL_H__
 #include "data_io.h"
 #include "model_base.h"
+#include <unordered_map>
 #include <iostream>
 
 class UserConstantModel : public ModelBase{

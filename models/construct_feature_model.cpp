@@ -63,7 +63,7 @@ vector<Feature> ConstructFeatureModel::getAuxFeatureAtTime(long uid,
     int s_id, double _time){
 //  return vector<Feature>();
   const UserContainer *data = _concat_data;
-  const vector<Session> & sessions = data->at(uid).get_sessions();
+  const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(s_id < (int)sessions.size());
   // copy session_feature and append day_feature
   vector<Feature> auxFeature(sessions[s_id].session_features);
@@ -78,7 +78,7 @@ vector<Feature> ConstructFeatureModel::getHawkesFeatureAtTime(long uid,
 
   const UserContainer *data = _concat_data;
   assert(data->find(uid) != data->end()); // uid not in training data !?
-  const vector<Session> &train_sessions = data->at(uid).get_sessions();
+  const vector<Session> &train_sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   vector<Feature> vec;
   for(int k = 0 ; k < num_kernel ; k++){
     int count_history = 0;
@@ -111,7 +111,7 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
   assert(_hours >= 0);
 //  return vector<Feature>();  
   const UserContainer *data = _concat_data;
-  const vector<Session> & sessions = data->at(uid).get_sessions();
+  const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
@@ -133,7 +133,7 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
     int s_id, double _hours){
   assert(_hours >= 0);
   const UserContainer *data = _concat_data;
-  const vector<Session> & sessions = data->at(uid).get_sessions();
+  const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
 
@@ -170,6 +170,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
     tmpMap[iter->first] = vector<DataPoint>();
     all_uids.push_back(iter->first);
   }
+  std::random_shuffle(all_uids.begin(), all_uids.end());
 #pragma omp parallel
   {
     int n_user = 0; 
@@ -186,7 +187,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
         }
       }
       long uid = all_uids[i];
-      User &user = _concat_data->at(uid);
+      User &user = (*_concat_data)[uid];
       const vector<Session> &all_sessions = user.get_sessions();
       for(int i = 1 ; i < (int)all_sessions.size(); i++){
         SparseVector x = getFeatureAtTime(uid, i, all_sessions[i].start.hours());
@@ -240,10 +241,10 @@ void ConstructFeatureModel::buildDataset(){
       continue;
     }
     isTestSet[uid] = unordered_map<int, bool>();
-    int train_session_size = (int)_concat_data->at(uid).get_sessions().size();
+    int train_session_size = (int)(*_concat_data)[uid].get_sessions().size();
     int offset = 0;
-    for(auto &test_session : _test_data->at(uid).get_sessions()){
-      _concat_data->at(uid).append_session(test_session);
+    for(auto &test_session : (*const_cast<UserContainer*>(_test_data))[uid].get_sessions()){
+      (*_concat_data)[uid].append_session(test_session);
       isTestSet[uid][offset + train_session_size] = true;
       offset ++;
     }
