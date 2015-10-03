@@ -104,7 +104,14 @@ int main(int argc, char *argv[]){
     if(!parse_param(argc, argv, vm)){
         return -1;
     }
-
+    if(!ModelBase::loadConfig(vm["config"].as<std::string>().c_str())){
+        std::cerr<<"Load config file "<<vm["config"].as<std::string>().c_str()<<" failed"<<std::endl;
+        return -1;
+    }
+    BIN_WIDTH = ModelBase::getConfig()["BIN_WIDTH"].as<double>();
+    NUM_BIN = ModelBase::getConfig()["NUM_BIN"].as<int>();
+    cerr<<"BIN_WIDTH="<<BIN_WIDTH<<endl;
+    cerr<<"NUM_BIN="<<NUM_BIN<<endl;
     UserContainer train_data;
     train_data.reserve(10000000);
     cerr<<"Reading data for training dataset"<<endl;
@@ -124,10 +131,6 @@ int main(int argc, char *argv[]){
               vm["test_start"].as<std::string>().c_str(),
               vm["test_end"].as<std::string>().c_str(),
               test_data);
-    if(!ModelBase::loadConfig(vm["config"].as<std::string>().c_str())){
-        std::cerr<<"Load config file "<<vm["config"].as<std::string>().c_str()<<" failed"<<std::endl;
-        return -1;
-    }
     std::vector<ModelBase*> models;
     load_models(vm["models"].as<std::vector<std::string> >(),
                 models);
@@ -145,6 +148,7 @@ int main(int argc, char *argv[]){
         cerr<<"Please give at least one evaluation to do testing"<<endl;
         return -1;
     }
+
     cerr<<"Start to train models"<<endl;
     train_models(&train_data, models);
     cerr <<"Start to test models"<<endl;
