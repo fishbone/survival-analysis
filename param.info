@@ -1,19 +1,20 @@
 {
   "hawkes":{
-    "lr_lambda": 0.0005,
-      "lr_alpha": 0.00000001,
+    "lr_lambda": 0.000,
+      "lr_alpha": 0.0000000,
       "num_kernel": 30,
-      "history_size": 20
+      "history_size": 5566
   },
   "construct_feature":{
     "output_path" : "./hawkes_feature"
     },
     "feature_based":{
-      "lr_w": 0.00000001,
-      "lr_lambda": 0.001,
+      "lr_w": 1e-8,
+      "lr_lambda": 5e-05,
       "momentum": 0.7,
-      "max_iter": 20,
-      "l1_pen" : 0.3
+      "max_iter": 100,
+      "l1_pen" : 0.01,
+      "l2_pen" : 0
     },
     "test":{
       "a": 123,

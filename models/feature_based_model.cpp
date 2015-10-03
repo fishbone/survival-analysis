@@ -18,7 +18,7 @@ void FeatureBasedModel::initParams(){
   momentum  = _config["feature_based"]["momentum"].as<double>();
   max_iter  = _config["feature_based"]["max_iter"].as<int>();
   l1_pen    = _config["feature_based"]["l1_pen"].as<double>();
-  
+  l2_pen    = _config["feature_based"]["l2_pen"].as<double>();
   // weights for features
   //W  = SparseVector::rand_init(num_feature);
   W  = SparseVector::zero_init(1);
@@ -35,6 +35,14 @@ FeatureBasedModel::FeatureBasedModel() {
 }
 
 void FeatureBasedModel::init(){
+  initParams();
+  cerr <<"=====lr_lambda = "<<lr_lambda<<endl
+    <<"=====momentum = "<<momentum<<endl
+    <<"=====lr_w = "<<lr_w<<endl
+    <<"=====l2_pen = "<<l2_pen<<endl
+    <<"=====l1_pen = "<<l1_pen<<endl
+    <<"=====kernel = "<< _config["hawkes"]["num_kernel"].as<int>()
+    <<"=====history= "<<_config["hawkes"]["history_size"].as<int>()<<endl;
   ctrFeature.setData(_train_data, _test_data);
   assert(_train_data != nullptr);
   assert(_test_data != nullptr);
@@ -43,11 +51,10 @@ void FeatureBasedModel::init(){
   test_data = ctrFeature.getTestSet();
   assert(train_data.size() != 0);
   assert(test_data.size() != 0);
-  initParams();
 }
 
 double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
-  
+
   double loglik = 0.0;
   unordered_map<long, int> perUserCount;
   unordered_map<long, double> perUserLik;
@@ -60,16 +67,16 @@ double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
     double _loglik = 0.0;
     SparseVector &x = _point.x;
     SparseVector &int_x = _point.integral_x;
-    
+
     assert(bin >= 0);
     assert(bin < NUM_BIN);
-    
+
     _loglik += log(this->lambda_base[uid][bin] + SparseVector::dotProduct(W, x));
     for(int b = 0 ; b <= bin; b++){
       _loglik -= BIN_WIDTH * (this->lambda_base[uid][b]);
     }
     _loglik -= BIN_WIDTH * SparseVector::dotProduct(W, int_x);
-    
+
     perUserCount[uid] ++;
     perUserLik[uid] += _loglik;
   }
@@ -91,22 +98,26 @@ int FeatureBasedModel::train(const UserContainer *data){
   this->lambda_base = base.lambda_u;
 
   for(auto iter = base.lambda_u.begin(); iter != base.lambda_u.end(); ++iter){
-    this->lambda_base[iter->first] = vector<double>(NUM_BIN,1/(double)NUM_BIN); 
+    this->lambda_base[iter->first] = vector<double>(NUM_BIN,EPS_LAMBDA); 
     this->d_lambda_base[iter->first] = vector<double>(NUM_BIN,0.0); 
     this->g_lambda_base[iter->first] = vector<double>(NUM_BIN,0.0); 
   } 
   assert(train_data.size() != 0); // shoud call buildDataset before start training
-
+  random_shuffle ( train_data.begin(), train_data.end() );
+  double best_test = -2147483647.0;
   for(int iter = 0 ; iter < max_iter ; iter++){
-
+    double test_log_lik = evalLoglik(test_data);
+    if(test_log_lik > best_test){
+      best_test = test_log_lik;
+    }
     cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
-    cerr <<"Iter: "<<iter+1<<" ------loglik(test_data)  = "<<evalLoglik(test_data)<<endl;
-    random_shuffle ( train_data.begin(), train_data.end() );
+    cerr <<"Iter: "<<iter+1<<" ------loglik(test_data)  = "<<test_log_lik<<endl;
+    cerr <<"Iter: "<<iter+1<<" ------best test loglik   = "<<best_test<<endl;
     double scale = 0.0;
     int n_data = 0;
     for(int i = 0 ; i < (int)train_data.size() ; i++){
       n_data ++;
-      if(n_data % 10000 == 0){
+      if(n_data % 500000 == 0){
         cout <<"Training with SGD: " << n_data<<"/"<<train_data.size()<<endl;
       }
       long uid = train_data[i].uid;
@@ -126,29 +137,39 @@ int FeatureBasedModel::train(const UserContainer *data){
             - lr_lambda * scale * (BIN_WIDTH);
         }
         lambda_base[uid][b] += d_lambda_base[uid][b];
-        lambda_base[uid][b]  = max(lambda_base[uid][b] ,1e-6);
+        lambda_base[uid][b]  = max(lambda_base[uid][b] ,EPS_LAMBDA);
       }
-//      cout << int_x<<endl;      
+      //      cout << int_x<<endl;      
       SparseVector gradW = int_x * BIN_WIDTH - x/divider;
       vector<int> indices = gradW.getIndices();
       dW.mulEq(momentum, &indices);
       dW.subEq(gradW * lr_w * scale, &indices);
       W.addEq(dW, &indices);
-//      dW = dW *momentum - (int_x * BIN_WIDTH - x/divider) * lr_w * scale;
-//      W += dW;
+      W.subEq(lr_w * l1_pen, &indices); // l1 regularization
       W.threshold(0, &indices);
+      //      dW = dW *momentum - (int_x * BIN_WIDTH - x/divider) * lr_w * scale;
+      //      W += dW;
+      //      W.threshold(0, &indices);
 
-      W.proxMap(l1_pen, &indices);
 
-      //W.threshold(0, &indices);
-//      W.threshold(0);
-//      cerr << W.norm2()<<" "<<dW.norm2()<<endl;
-//      if((iter + 1) % 5 == 0){
-//        cout << W<<endl;
-//      }
+      //      W.threshold(0);
+      //      cerr << W.norm2()<<" "<<dW.norm2()<<endl;
+      //      if((iter + 1) % 5 == 0){
+      //        cout << W<<endl;
+      //      }
       //cout << W<<endl;
     }
   }
+  //cout <<"=========================== W ============================"<<endl;
+  //cout << W<<endl;
+  cerr <<"=====lr_lambda = "<<lr_lambda<<endl
+    <<"=====momentum = "<<momentum<<endl
+    <<"=====lr_w = "<<lr_w<<endl
+    <<"=====l2_pen = "<<l2_pen<<endl
+    <<"=====l1_pen = "<<l1_pen<<endl
+    <<"=====kernel = "<< _config["hawkes"]["num_kernel"].as<int>()
+    <<"=====history= "<<_config["hawkes"]["history_size"].as<int>()<<endl
+    <<"=====best test loglik = "<<best_test<<endl;
 
   return 0;
 }   

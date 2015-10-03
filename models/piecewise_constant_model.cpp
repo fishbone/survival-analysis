@@ -30,7 +30,7 @@ int PiecewiseConstantModel::train(const UserContainer *data){
     double global_lambda = session_num / total_time;
     for(auto iter = data->begin();
             iter != data->end(); ++iter){
-        vector<double> userLambda(NUM_BIN,global_lambda);
+        vector<double> userLambda(NUM_BIN,EPS_LAMBDA);
         vector<int> countInBin(NUM_BIN,0);
         vector<int> countBeforeBin(NUM_BIN,0);
         const vector<Session> &sessions = iter->second.get_sessions();

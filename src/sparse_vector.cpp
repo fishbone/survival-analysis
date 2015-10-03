@@ -219,6 +219,20 @@ SparseVector& SparseVector::subEq(SparseVector  rhs, vector<int> * indices){
   return (*this);
 }
 
+SparseVector& SparseVector::subEq(double scale, vector<int> * indices){
+  if (indices != nullptr){
+    for(int ind : (*indices)){
+      _feature[ind] -= scale;
+    }
+  } else {
+    for(auto iter = this->begin(); iter != this->end(); ++iter){
+      int ind = iter->first;
+      _feature[ind] -= scale;
+    }
+  }
+  return (*this);
+}
+
 SparseVector& SparseVector::addEq(SparseVector & rhs, vector<int> * indices){
   if (indices != nullptr){
     for(int ind : (*indices)){

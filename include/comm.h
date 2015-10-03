@@ -6,5 +6,6 @@
 // number of bins
 #define NUM_BIN (72)
 #define NUM_KERNEL_TYPE 3
+#define EPS_LAMBDA 1e-5
 #define FLOAT float
 #endif

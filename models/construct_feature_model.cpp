@@ -253,7 +253,7 @@ void ConstructFeatureModel::buildDataset(){
   buildVectorizedDataset();
 
   //it's more convenient to compute hawkes features
-  writeToFile(_config["construct_feature"]["output_path"].as<string>());
+  //writeToFile(_config["construct_feature"]["output_path"].as<string>());
 }
 
 int ConstructFeatureModel::train(const UserContainer *data){

@@ -108,6 +108,8 @@ class SparseVector {
     SparseVector& subEq(SparseVector &, std::vector<int> *indices = nullptr);
     
     SparseVector& subEq(SparseVector , std::vector<int> *indices = nullptr);
+    
+    SparseVector& subEq(double , std::vector<int> *indices = nullptr);
 
     SparseVector div(double, std::vector<int> *indices = nullptr);
 
