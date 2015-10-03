@@ -9,11 +9,11 @@
     "output_path" : "./hawkes_feature"
     },
     "feature_based":{
-      "lr_w": 1e-8,
+      "lr_w": 5e-8,
       "lr_lambda": 5e-05,
       "momentum": 0.7,
       "max_iter": 100,
-      "l1_pen" : 0.01,
+      "l1_pen" : 0.0,
       "l2_pen" : 0
     },
     "test":{
