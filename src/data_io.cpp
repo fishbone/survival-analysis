@@ -51,6 +51,22 @@ bool stay_handle(std::istream &is,
         offset = getFeatureOffset(tmp);
         sess.session_features.push_back({offset, stay});
     }
+    int dw = sess.start.dayOfWeek();
+    assert(dw >= 0 && dw <= 6);
+    std::string dw_id;
+    dw_id.push_back(dw + '0');
+    dw_id += "_week";
+    offset = getFeatureOffset(dw_id);
+    sess.session_features.push_back({offset, 1});
+
+
+    int dd = (int)(sess.start.hourOfDay() / 6.0);
+    assert(dd >= 0 && dd <= 3);
+    std::string dd_id;
+    dd_id.push_back(dd + '0');
+    dd_id += "_daystatus";
+    offset = getFeatureOffset(dd_id);
+    sess.session_features.push_back({offset, 1});
     return true;
 }
 
