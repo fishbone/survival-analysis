@@ -1,4 +1,6 @@
 {
+  "NUM_BIN": 72,
+  "BIN_WIDTH": 0.5,
   "hawkes":{
     "lr_lambda": 0.000,
       "lr_alpha": 0.0000000,

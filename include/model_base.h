@@ -47,6 +47,9 @@ class ModelBase {
         _config = jsoncons::json::parse_file(file);
         return true;
     }
+    static const jsoncons::json &getConfig(){
+        return _config;
+    }
   protected:
     static jsoncons::json _config;
     const UserContainer *_train_data;
