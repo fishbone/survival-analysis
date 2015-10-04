@@ -17,6 +17,7 @@ class PiecewiseConstantModel : public ModelBase{
     typedef std::unordered_map<long, std::vector<double>> LambdaU;
   private:
     const UserContainer *_user_train;
+    double evalTrainPerp(const UserContainer * );
     LambdaU lambda_u;
 };
 #endif

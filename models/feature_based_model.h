@@ -28,7 +28,7 @@ class FeatureBasedModel : public ModelBase{
 
     ConstructFeatureModel ctrFeature;
 
-    typedef std::unordered_map<long, double> LambdaU;
+    typedef std::unordered_map<long, std::vector<double>> LambdaU;
 
     
     std::vector<DataPoint> train_data, test_data;

@@ -66,24 +66,30 @@ double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
   for(int i = 0 ; i < (int)data.size(); i++){
     DataPoint &_point = data[i];
 
-    int bin = _point.bin;
+    int target_bin = min(NUM_BIN - 1,_point.bin);
     long uid = _point.uid;
     double y = _point.y;
     double _loglik = 0.0;
+    double lambda = lambda_u[uid][target_bin];
     SparseVector &x = _point.x;
     SparseVector &int_x = _point.integral_x;
     assert(_point.start - _point.prev_end >= 0);
-    assert(bin >= 0);
+    assert(target_bin >= 0);
 
-    _loglik += log(lambda + lambda_u[uid] + SparseVector::dotProduct(W, x));
-    _loglik -= (_point.start - _point.prev_end) * (lambda + lambda_u[uid]);
-    _loglik -= BIN_WIDTH * SparseVector::dotProduct(W, int_x);
+    _loglik += log(lambda + SparseVector::dotProduct(W, x));
+    for(int b = 0 ; b < target_bin; b++){
+      _loglik -= lambda_u[uid][b] * BIN_WIDTH;
+    }
+    _loglik -= SparseVector::dotProduct(W, int_x) +  
+      (_point.start - (_point.prev_end + target_bin * BIN_WIDTH)) * 
+      lambda;
 
     perUserCount[uid] ++;
     perUserLik[uid] += _loglik;
+    loglik += _loglik;
   }
 
-//    return exp(-loglik/(double)data.size());
+    return exp(-loglik/(double)data.size());
 
     for(auto iter : perUserCount){
     loglik += perUserLik[iter.first]/iter.second;
@@ -106,9 +112,10 @@ int FeatureBasedModel::train(const UserContainer *data){
   baseu.train(data);
   lambda = EPS_LAMBDA;
   for(auto iter = base.lambda_u.begin(); iter != base.lambda_u.end(); ++iter){
-    this->lambda_u[iter->first] = EPS_LAMBDA; 
-    this->d_lambda_u[iter->first] = 0.0; 
+    this->lambda_u[iter->first] = vector<double>(NUM_BIN, EPS_LAMBDA); 
+    this->d_lambda_u[iter->first] = vector<double>(NUM_BIN, 0.0); 
   } 
+  this->lambda_u = base.lambda_u;
   assert(train_data.size() != 0); // shoud call buildDataset before start training
   random_shuffle ( train_data.begin(), train_data.end() );
   double best_test = 2147483647.0;
@@ -129,22 +136,27 @@ int FeatureBasedModel::train(const UserContainer *data){
         cerr <<"max(W) = "<<W.max()<<endl;
       }
       long uid = train_data[i].uid;
-      int bin = train_data[i].bin;
+      int bin = min(NUM_BIN - 1,train_data[i].bin);
       SparseVector &x = train_data[i].x;
       SparseVector &int_x = train_data[i].integral_x;
       double t = train_data[i].y;
-      double divider = lambda + lambda_u[uid] + SparseVector::dotProduct(W, x);
-      assert(lambda + lambda_u[uid] + SparseVector::dotProduct(W, x) >= 0 );
+      double divider = lambda_u[uid][bin] + SparseVector::dotProduct(W, x);
+      assert(divider >= 0);
       scale = 1/(double)data->at(uid).get_sessions().size();
-     
-      d_lambda = momentum * d_lambda  - lr_lambda * scale * (t-1.0/divider);
-      d_lambda_u[uid] = momentum * d_lambda_u[uid]  - lr_lambda_u * scale* (t-1.0/divider);
-      lambda += d_lambda;
-      lambda_u[uid] += d_lambda_u[uid];
-      lambda = max(lambda, 0.0);
-      lambda_u[uid] = max(lambda_u[uid], 0.0);
+    
+      for(int b = 0 ; b < bin ; b++){
+       d_lambda_u[uid][b] = 
+         momentum * d_lambda_u[uid][b] - lr_lambda * scale * BIN_WIDTH;
+       lambda_u[uid][b] += d_lambda_u[uid][b];
+       lambda_u[uid][b] = max(EPS_LAMBDA, lambda_u[uid][b]);
+      }
+      d_lambda_u[uid][bin] = 
+         momentum * d_lambda_u[uid][bin] - lr_lambda * scale * 
+         (t - bin * BIN_WIDTH - 1.0/(divider));
+      lambda_u[uid][bin] += d_lambda_u[uid][bin];
+      lambda_u[uid][bin] = max(EPS_LAMBDA, lambda_u[uid][bin]);
 
-      SparseVector gradW = int_x * BIN_WIDTH - x/divider;
+      SparseVector gradW = int_x - x/divider;
       vector<int> indices = gradW.getIndices();
       dW.mulEq(momentum, &indices);
       dW.subEq(gradW * lr_w * scale, &indices);

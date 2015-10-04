@@ -2,6 +2,7 @@
 #include "model_test.h"
 #include "eval_loglik.h"
 #include "global_constant_model.h"
+#include "global_piecewise_constant_model.h"
 #include "construct_feature_model.h"
 #include "user_constant_model.h"
 #include "piecewise_constant_model.h"
@@ -25,6 +26,8 @@ ModelBase *ModelBase::makeModel(const char *model_name){
         return new FeatureBasedModel();
     }else if(name == "construct_feature_model"){
         return new ConstructFeatureModel();
+    }else if(name == "global_piecewise_constant_model"){
+        return new GlobalPiecewiseConstantModel();
     }
     return nullptr;
 }

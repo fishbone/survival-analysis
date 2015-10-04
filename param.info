@@ -11,9 +11,9 @@
     "output_path" : "./hawkes_feature"
     },
     "feature_based":{
-      "lr_w": 1e-9,
-      "lr_lambda": 1e-9,
-      "lr_lambda_u": 1e-5,
+      "lr_w": 0.0,
+      "lr_lambda": 5e-3,
+      "lr_lambda_u": 0.0,
       "momentum": 0.7,
       "max_iter": 50,
       "l1_pen" : 0.0,

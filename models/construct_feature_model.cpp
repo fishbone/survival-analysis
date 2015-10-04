@@ -136,7 +136,10 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
   //since session_feature and day_feature are the same within the same
   //session, we just scale by a factor of target_bin to get the desired number
   for(int i = 0 ; i < (int)auxFeature.size(); i++){
-    auxFeature[i].second *= (target_bin + 1);
+    //auxFeature[i].second *= (target_bin + 1);
+    //aux feaure does not vary within this session, so integration
+    //can be done exactly
+    auxFeature[i].second *= (_hours - prev_end);
   }
   return auxFeature;
 }
@@ -157,9 +160,13 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
   // add them add
   vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
 
-  for(int b = 0 ; b < target_bin; b++){
+  for(int b = 0 ; b <= target_bin; b++){
+    double end = prev_end + (b + 1) * BIN_WIDTH;
+    if(b == target_bin){
+      end = _hours;
+    }
     vector<Feature> tmpHawkes = getHawkesFeatureAtTime(uid, 
-        s_id, prev_end + (b + 1) * BIN_WIDTH);
+        s_id, end);
     for(int i = 0 ; i < (int)tmpHawkes.size(); i++){
       //for sanity check, 
       if(hawkesFeature[i].first != tmpHawkes[i].first){
@@ -169,6 +176,7 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
       hawkesFeature[i].second += tmpHawkes[i].second;
     }
   }
+
   return hawkesFeature;
 }
 

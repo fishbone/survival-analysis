@@ -11,6 +11,7 @@ class GlobalConstantModel : public ModelBase{
     int train(const UserContainer *data);
     const char *modelName();
     PredictRes predict(const User &user);
+    double evalTrainPerp(const UserContainer *data) ; 
     double lambda;
   private:
     //keep an access to training data because we need this during testing
