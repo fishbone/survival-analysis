@@ -5,11 +5,14 @@ using namespace std;
 double GlobalConstantModel::evalTrainPerp(const UserContainer *data){
     double loglik = 0.0;
     int n_session = 0;
+    int n_user = 0;
   for(auto iter = data->begin();
       iter != data->end(); ++iter){
     int index = 0;
     double prev_end = -1;
-
+    if( iter->second.get_sessions().size() > 1){
+      n_user ++;
+    }
     for (auto j = iter->second.get_sessions().begin();
         j!= iter->second.get_sessions().end();
         ++j){
@@ -20,12 +23,13 @@ double GlobalConstantModel::evalTrainPerp(const UserContainer *data){
         double log_density = log(lambda);
         double integral_lambda = lambda*(j->start.hours() - prev_end);
         prev_end = j->end.hours();
-        loglik += log_density - integral_lambda;
+        loglik += (log_density - integral_lambda)/(double)( iter->second.get_sessions().size()-1);
         n_session ++;
       }
     }
   }
-  cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-loglik/(double)n_session)<<endl;
+  //cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-loglik/(double)n_session)<<endl;
+  cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-loglik/(double)n_user)<<endl;
 }
 int GlobalConstantModel::train(const UserContainer *data){
   double total_time = 0;

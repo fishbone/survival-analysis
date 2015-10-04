@@ -5,12 +5,16 @@
 using namespace std;
 double PiecewiseConstantModel::evalTrainPerp(const UserContainer * data){
   int n_session = 0;
+  int n_user = 0;
   double sum_loglik = 0.0;
   for(auto iter = data->begin();
       iter != data->end(); ++iter){
     int index = 0;
     double prev_end = -1;
     long uid = iter->first;
+    if(iter->second.get_sessions().size() > 1){
+     n_user ++;
+    }
     for (auto j = iter->second.get_sessions().begin();
         j!= iter->second.get_sessions().end();
         ++j){
@@ -38,37 +42,17 @@ double PiecewiseConstantModel::evalTrainPerp(const UserContainer * data){
         loglik -= normalized;
         prev_end = j->end.hours();
         n_session ++;
-        sum_loglik += loglik;
+        sum_loglik += loglik/(double)(iter->second.get_sessions().size()-1);
       }
     }
   }
-  cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-sum_loglik/(double)n_session)<<endl;
+  //cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-sum_loglik/(double)n_session)<<endl;
+  cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-sum_loglik/(double)n_user)<<endl;
 }
 int PiecewiseConstantModel::train(const UserContainer *data){
   _user_train = data;
   //some bins will have no data, which will result in very poor estimation
   //here we simply fill them by the global_constant estimate...
-  double total_time = 0;
-  double session_num = 0;
-  for(auto iter = data->begin();
-      iter != data->end(); ++iter){
-    int index = 0;
-    double prev_time = -1; 
-
-    for (auto j = iter->second.get_sessions().begin();
-        j!= iter->second.get_sessions().end();
-        ++j){
-      if (index == 0){ 
-        index++;
-        prev_time = j->end.hours();
-      } else{
-        total_time += (j->start.hours() - prev_time);
-        prev_time = j->end.hours();
-        session_num ++; 
-      }   
-    }   
-  }   
-  double global_lambda = session_num / total_time;
   for(auto iter = data->begin();
       iter != data->end(); ++iter){
     vector<double> userLambda(NUM_BIN,EPS_LAMBDA);

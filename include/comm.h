@@ -8,6 +8,10 @@ extern int NUM_BIN;
 // number of bins
 //#define NUM_BIN (72)
 #define NUM_KERNEL_TYPE 3
-#define EPS_LAMBDA 1e-2
+#define EPS_LAMBDA 1e-5
 #define FLOAT float
+#define NO_FEATURE 0
+#define HAWKES_FEATURE 1
+#define AUX_FEATURE 2
+#define BOTH_FEATURE 3
 #endif

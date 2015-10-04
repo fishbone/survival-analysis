@@ -85,12 +85,12 @@ double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
 
     perUserCount[uid] ++;
     perUserLik[uid] += _loglik;
-    loglik += _loglik;
+    //    loglik += _loglik;
   }
 
-    return exp(-loglik/(double)data.size());
+  //  return exp(-loglik/(double)data.size());
 
-    for(auto iter : perUserCount){
+  for(auto iter : perUserCount){
     loglik += perUserLik[iter.first]/iter.second;
   }
   cout << "evaluated_user = "<< perUserCount.size()<<endl;
@@ -108,13 +108,13 @@ int FeatureBasedModel::train(const UserContainer *data){
   global.train(data);
   baseu.train(data);
   for(auto iter = baseu.lambda_u.begin(); iter != baseu.lambda_u.end(); ++iter){
-    this->lambda_u[iter->first] =0.0; 
+    this->lambda_u[iter->first] =EPS_LAMBDA; 
     this->d_lambda_u[iter->first] = 0.0;
   } 
   //this->lambda =  global.lambda_all;
   this->d_lambda =  vector<double>(NUM_BIN, 0.0);
   this->lambda =  vector<double>(NUM_BIN, EPS_LAMBDA);
-//  this->lambda_u = base.lambda_u;
+  //  this->lambda_u = base.lambda_u;
   assert(train_data.size() != 0); // shoud call buildDataset before start training
   random_shuffle ( train_data.begin(), train_data.end() );
   double best_test = 2147483647.0;
@@ -141,17 +141,18 @@ int FeatureBasedModel::train(const UserContainer *data){
       double t = train_data[i].y;
       double divider = lambda_u[uid] + lambda[bin] + SparseVector::dotProduct(W, x);
       assert(divider >= 0);
-      scale = 1/(double)data->at(uid).get_sessions().size();
-    
+      //scale = 1/(double)data->at(uid).get_sessions().size();
+      scale = 1.0;
+
       for(int b = 0 ; b < bin ; b++){
-       d_lambda[b] = 
-         momentum * d_lambda[b] - lr_lambda * scale * BIN_WIDTH;
-       lambda[b] += d_lambda[b];
-       lambda[b] = max(EPS_LAMBDA, lambda[b]);
+        d_lambda[b] = 
+          momentum * d_lambda[b] - lr_lambda * scale * BIN_WIDTH;
+        lambda[b] += d_lambda[b];
+        lambda[b] = max(EPS_LAMBDA, lambda[b]);
       }
       d_lambda[bin] = 
-         momentum * d_lambda[bin] - lr_lambda * scale * 
-         (t - bin * BIN_WIDTH - 1.0/(divider));
+        momentum * d_lambda[bin] - lr_lambda * scale * 
+        (t - bin * BIN_WIDTH - 1.0/(divider));
       lambda[bin] += d_lambda[bin];
       lambda[bin] = max(EPS_LAMBDA, lambda[bin]);
 
@@ -165,19 +166,7 @@ int FeatureBasedModel::train(const UserContainer *data){
       dW.mulEq(momentum, &indices);
       dW.subEq(gradW * lr_w * scale, &indices);
       W.addEq(dW, &indices);
-//      W.subEq(lr_w * l1_pen, &indices); // l1 regularization
       W.threshold(0, &indices);
-      //      dW = dW *momentum - (int_x * BIN_WIDTH - x/divider) * lr_w * scale;
-      //      W += dW;
-      //      W.threshold(0, &indices);
-
-
-      //      W.threshold(0);
-      //      cerr << W.norm2()<<" "<<dW.norm2()<<endl;
-      //      if((iter + 1) % 5 == 0){
-      //        cout << W<<endl;
-      //      }
-      //cout << W<<endl;
     }
   }
   //cout <<"=========================== W ============================"<<endl;

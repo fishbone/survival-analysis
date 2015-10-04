@@ -5,6 +5,7 @@
 #include <tuple>
 #include "user.h"
 #include "jsoncons/json.hpp"
+
 class ModelBase {
   public:
     struct PredictRes{

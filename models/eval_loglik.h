@@ -19,7 +19,7 @@ class EvalLoglik : public EvaluationBase {
             n_session += std::get<1>(i).n_session;
             double perp = std::get<1>(i).loglikelihood;
             //double perp = std::get<1>(i).loglikelihood/(double)std::get<1>(i).n_session;
-            sum_loglik += perp;
+            sum_loglik += perp/(double)std::get<1>(i).n_session;
             ++count;
           //  std::cerr << std::get<1>(i).loglikelihood<<" "<< std::get<1>(i).n_session<<" "<<sum_loglik<<std::endl;
          //   getchar();
@@ -28,7 +28,8 @@ class EvalLoglik : public EvaluationBase {
             return "??";
 
         std::stringstream ss;
-        ss<<"Test ="<<count<<"\tuser\t"<<n_session<<"\tsessions, Average User log-likelihood="<<exp(-sum_loglik/(double)n_session);
+        //ss<<"Test ="<<count<<"\tuser\t"<<n_session<<"\tsessions, Average User log-likelihood="<<exp(-sum_loglik/(double)n_session);
+        ss<<"Test ="<<count<<"\tuser\t"<<n_session<<"\tsessions, Average User log-likelihood="<<exp(-sum_loglik/(double)count);
         return ss.str();
     }
 };
