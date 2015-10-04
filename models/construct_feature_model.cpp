@@ -173,7 +173,12 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
         cerr<<hawkesFeature[i].first<<" "<<tmpHawkes[i].first<<endl;
       }
       assert(hawkesFeature[i].first == tmpHawkes[i].first);
-      hawkesFeature[i].second += tmpHawkes[i].second;
+      if(b != target_bin){
+        hawkesFeature[i].second += tmpHawkes[i].second * BIN_WIDTH;
+      } else {
+        hawkesFeature[i].second += tmpHawkes[i].second * (fmod(end, BIN_WIDTH));
+      }
+
     }
   }
 

@@ -1,6 +1,7 @@
 #include "feature_based_model.h"
 #include "construct_feature_model.h"
 #include "piecewise_constant_model.h"
+#include "global_piecewise_constant_model.h"
 #include <algorithm> 
 #include <unordered_map>
 #include <utility>
@@ -25,8 +26,6 @@ void FeatureBasedModel::initParams(){
   W  = SparseVector::zero_init(1);
   gW = SparseVector::zero_init(1);
   dW = SparseVector::zero_init(1);
-  lambda = 0.0;
-  d_lambda = 0.0;
 }
 
 FeatureBasedModel::FeatureBasedModel() {
@@ -70,19 +69,19 @@ double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
     long uid = _point.uid;
     double y = _point.y;
     double _loglik = 0.0;
-    double lambda = lambda_u[uid][target_bin];
     SparseVector &x = _point.x;
     SparseVector &int_x = _point.integral_x;
     assert(_point.start - _point.prev_end >= 0);
     assert(target_bin >= 0);
 
-    _loglik += log(lambda + SparseVector::dotProduct(W, x));
+    _loglik += log(lambda[target_bin] + lambda_u[uid] + SparseVector::dotProduct(W, x));
     for(int b = 0 ; b < target_bin; b++){
-      _loglik -= lambda_u[uid][b] * BIN_WIDTH;
+      _loglik -= lambda[b] * BIN_WIDTH;
     }
     _loglik -= SparseVector::dotProduct(W, int_x) +  
       (_point.start - (_point.prev_end + target_bin * BIN_WIDTH)) * 
-      lambda;
+      lambda[target_bin] + 
+      (_point.start - _point.prev_end) * lambda_u[uid];
 
     perUserCount[uid] ++;
     perUserLik[uid] += _loglik;
@@ -104,18 +103,18 @@ int FeatureBasedModel::train(const UserContainer *data){
 
   init();
   cout <<"initializing base rate using piecewise constant..."<<endl;
-  PiecewiseConstantModel base;
+  GlobalPiecewiseConstantModel global;
   UserConstantModel baseu;
-  GlobalConstantModel global;
-  base.train(data);
   global.train(data);
   baseu.train(data);
-  lambda = EPS_LAMBDA;
-  for(auto iter = base.lambda_u.begin(); iter != base.lambda_u.end(); ++iter){
-    this->lambda_u[iter->first] = vector<double>(NUM_BIN, EPS_LAMBDA); 
-    this->d_lambda_u[iter->first] = vector<double>(NUM_BIN, 0.0); 
+  for(auto iter = baseu.lambda_u.begin(); iter != baseu.lambda_u.end(); ++iter){
+    this->lambda_u[iter->first] =0.0; 
+    this->d_lambda_u[iter->first] = 0.0;
   } 
-  this->lambda_u = base.lambda_u;
+  //this->lambda =  global.lambda_all;
+  this->d_lambda =  vector<double>(NUM_BIN, 0.0);
+  this->lambda =  vector<double>(NUM_BIN, EPS_LAMBDA);
+//  this->lambda_u = base.lambda_u;
   assert(train_data.size() != 0); // shoud call buildDataset before start training
   random_shuffle ( train_data.begin(), train_data.end() );
   double best_test = 2147483647.0;
@@ -140,21 +139,26 @@ int FeatureBasedModel::train(const UserContainer *data){
       SparseVector &x = train_data[i].x;
       SparseVector &int_x = train_data[i].integral_x;
       double t = train_data[i].y;
-      double divider = lambda_u[uid][bin] + SparseVector::dotProduct(W, x);
+      double divider = lambda_u[uid] + lambda[bin] + SparseVector::dotProduct(W, x);
       assert(divider >= 0);
       scale = 1/(double)data->at(uid).get_sessions().size();
     
       for(int b = 0 ; b < bin ; b++){
-       d_lambda_u[uid][b] = 
-         momentum * d_lambda_u[uid][b] - lr_lambda * scale * BIN_WIDTH;
-       lambda_u[uid][b] += d_lambda_u[uid][b];
-       lambda_u[uid][b] = max(EPS_LAMBDA, lambda_u[uid][b]);
+       d_lambda[b] = 
+         momentum * d_lambda[b] - lr_lambda * scale * BIN_WIDTH;
+       lambda[b] += d_lambda[b];
+       lambda[b] = max(EPS_LAMBDA, lambda[b]);
       }
-      d_lambda_u[uid][bin] = 
-         momentum * d_lambda_u[uid][bin] - lr_lambda * scale * 
+      d_lambda[bin] = 
+         momentum * d_lambda[bin] - lr_lambda * scale * 
          (t - bin * BIN_WIDTH - 1.0/(divider));
-      lambda_u[uid][bin] += d_lambda_u[uid][bin];
-      lambda_u[uid][bin] = max(EPS_LAMBDA, lambda_u[uid][bin]);
+      lambda[bin] += d_lambda[bin];
+      lambda[bin] = max(EPS_LAMBDA, lambda[bin]);
+
+      d_lambda_u[uid] = 
+        momentum * d_lambda_u[uid] - lr_lambda_u * scale * (t - 1.0/(divider));
+      lambda_u[uid] += d_lambda_u[uid];
+      lambda_u[uid] = max(EPS_LAMBDA, lambda_u[uid]);
 
       SparseVector gradW = int_x - x/divider;
       vector<int> indices = gradW.getIndices();
