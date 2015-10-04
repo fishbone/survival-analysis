@@ -58,17 +58,23 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
       hawkesFeature.begin(), hawkesFeature.end());
   return SparseVector(jointFeature);
 }
-//get features other than Hawkes for given (uid, session_id, _time);
+/*
+ * Note that for the session s_id, the Aux feature should be 
+ * whatever there is in the s_id - 1's session !!!! because the current
+ * session is considered as future data that we've not seen so should not
+ * be used for prediction, that's why there is a s_id - 1 in the code
+ */ 
 vector<Feature> ConstructFeatureModel::getAuxFeatureAtTime(long uid,
     int s_id, double _time){
 //  return vector<Feature>();
   const UserContainer *data = _concat_data;
   const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(s_id < (int)sessions.size());
+  assert(s_id > 0);
   // copy session_feature and append day_feature
-  vector<Feature> auxFeature(sessions[s_id].session_features);
+  vector<Feature> auxFeature(sessions[s_id - 1].session_features);
   auxFeature.insert(auxFeature.end(), 
-      sessions[s_id].day_features->begin(), sessions[s_id].day_features->end());
+      sessions[s_id - 1].day_features->begin(), sessions[s_id - 1].day_features->end());
   return auxFeature;
 }
 
@@ -105,21 +111,27 @@ SparseVector ConstructFeatureModel::getIntegralFeatureAtTime(long uid,
 
   return SparseVector(jointFeature);
 }
-
+/*
+ * Note that for the session s_id, the Aux feature should be 
+ * whatever there is in the s_id - 1's session !!!! because the current
+ * session is considered as future data that we've not seen so should not
+ * be used for prediction, that's why there is a s_id - 1 in the code
+ */ 
 vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
     int s_id, double _hours){
+  const UserContainer *data = _concat_data;
+  
+  const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(_hours >= 0);
 //  return vector<Feature>();  
-  const UserContainer *data = _concat_data;
-  const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
   int target_bin = min(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH) );
   // copy session_feature and append day_feature
-  vector<Feature> auxFeature(sessions[s_id].session_features);
+  vector<Feature> auxFeature(sessions[s_id ].session_features);
   auxFeature.insert(auxFeature.end(), 
-      sessions[s_id].day_features->begin(), sessions[s_id].day_features->end());
+      sessions[s_id - 1].day_features->begin(), sessions[s_id - 1].day_features->end());
 
   //since session_feature and day_feature are the same within the same
   //session, we just scale by a factor of target_bin to get the desired number
@@ -189,12 +201,12 @@ void ConstructFeatureModel::buildVectorizedDataset(){
       long uid = all_uids[i];
       User &user = (*_concat_data)[uid];
       const vector<Session> &all_sessions = user.get_sessions();
-      for(int i = 1 ; i < (int)all_sessions.size(); i++){
-        SparseVector x = getFeatureAtTime(uid, i, all_sessions[i].start.hours());
-        double prev_end = all_sessions[i-1].end.hours();
-        double start = all_sessions[i].start.hours();
-        double end = all_sessions[i].end.hours();
-        int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN-1);
+      for(int j = 1 ; j < (int)all_sessions.size(); j++){
+        // the "feature" of this session should be the feature of previous session ! (use previous session to predict current sesssion
+        double prev_end = all_sessions[j-1].end.hours();
+        double start = all_sessions[j].start.hours();
+        double end = all_sessions[j].end.hours();
+        int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN - 1);
         // ctr :(uid, s_id, y, bin, start, end)
         DataPoint data;
         // info about this data point
@@ -204,9 +216,9 @@ void ConstructFeatureModel::buildVectorizedDataset(){
         data.prev_end = prev_end;
         data.bin = bin;
         data.y = start - prev_end;
-        data.s_id = i;
-        data.x = getFeatureAtTime(uid, i, start);
-        data.integral_x = getIntegralFeatureAtTime(uid, i, start);
+        data.s_id = j;
+        data.x = getFeatureAtTime(uid, j, start);
+        data.integral_x = getIntegralFeatureAtTime(uid, j, start);
         tmpMap[uid].push_back(data);
       }
     }

@@ -1,7 +1,9 @@
 #ifndef __PIECEWISE_CONSTANT_MODEL_H__
 #define __PIECEWISE_CONSTANT_MODEL_H__
+#include "user_constant_model.h"
 #include "data_io.h"
 #include "model_base.h"
+#include "comm.h"
 #include <unordered_map>
 #include <iostream>
 

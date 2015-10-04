@@ -1,5 +1,6 @@
 #include <iostream>
 #include <boost/program_options.hpp>
+#include "comm.h"
 #include <ctime>
 #include <string>
 #include "data_io.h"
