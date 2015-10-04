@@ -33,7 +33,7 @@ ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
     // user here should contain test data sessions
     auto ite = _user_train->find(user.id());
     if(ite == _user_train->end()){
-        return PredictRes(-1, 0.0, false);
+        return PredictRes(-1, 0.0, 0.0, false);
     }else{
         const vector<Session> &train_sessions = ite->second.get_sessions();
         const vector<Session> &test_sessions = user.get_sessions();
@@ -49,7 +49,8 @@ ModelBase::PredictRes GlobalConstantModel::predict(const User &user){
         }
 
         return PredictRes(0,
-                          loglik/num_sessions,
+                          loglik,
+                          num_sessions,
                           true);
     }
 }

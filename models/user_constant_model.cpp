@@ -33,7 +33,7 @@ int UserConstantModel::train(const UserContainer *data){
         }else{
           // if this user only has one session, we simply fill in the rate
           // with global constant value
-            lambda_u.insert(make_pair(iter->first, global_model.lambda));
+            lambda_u.insert(make_pair(iter->first, EPS_LAMBDA));
         }
     }
     return 0;
@@ -41,7 +41,7 @@ int UserConstantModel::train(const UserContainer *data){
 ModelBase::PredictRes UserConstantModel::predict(const User &user){
     auto ite = _user_train->find(user.id());
     if(ite == _user_train->end() || ite->second.get_sessions().size() == 0){
-        return PredictRes(-1, 0.0, false);
+        return PredictRes(-1, 0.0, 0.0, false);
     }else{
         // this compute 1/n_session * p(t' <= t), not the log-likelihood...
         const vector<Session> &train_sessions = ite->second.get_sessions();
@@ -59,7 +59,8 @@ ModelBase::PredictRes UserConstantModel::predict(const User &user){
         }   
 
         return PredictRes(0,
-                loglik/num_sessions,
+                loglik,
+                num_sessions,
                 true);
     } 
 }

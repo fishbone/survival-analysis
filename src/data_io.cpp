@@ -49,7 +49,7 @@ bool stay_handle(std::istream &is,
         sess.session_features.push_back({offset, 1});
         tmp = str_id + "_stay";
         offset = getFeatureOffset(tmp);
-        sess.session_features.push_back({offset, stay});
+        sess.session_features.push_back({offset, stay/(double)3600.0}); // stay in hours
     }
     int dw = sess.start.dayOfWeek();
     assert(dw >= 0 && dw <= 6);

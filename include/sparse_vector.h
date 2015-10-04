@@ -87,6 +87,14 @@ class SparseVector {
       return sqrt(sum_sq/count);
     }
     
+    FLOAT max(){
+      FLOAT MAX = 0;
+      for(auto iter = _feature.begin(); iter != _feature.end(); ++iter){
+        MAX = std::max(MAX, iter->second);
+      }
+      return MAX;
+    }
+    
     void deleteKey(int key);
 
     void proxMap(double t, std::vector<int> *indices = nullptr);

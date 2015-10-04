@@ -13,16 +13,21 @@ class EvalLoglik : public EvaluationBase {
                 const std::vector<std::tuple<long, ModelBase::PredictRes> > &predict_res){
         double sum_loglik = 0.0;
         int count = 0;
+        long n_session = 0;
         for(auto &i : predict_res){
             assert(std::get<1>(i).valid);
-            sum_loglik += std::get<1>(i).loglikelihood;
+            n_session += std::get<1>(i).n_session;
+            double perp = std::get<1>(i).loglikelihood/(double)std::get<1>(i).n_session;
+            sum_loglik += perp;
             ++count;
+          //  std::cerr << std::get<1>(i).loglikelihood<<" "<< std::get<1>(i).n_session<<" "<<sum_loglik<<std::endl;
+         //   getchar();
         }
-        if(count == 0)
+        if(n_session == 0)
             return "??";
 
         std::stringstream ss;
-        ss<<"Test ="<<count<<" users\tAverage log-likelihood="<<(sum_loglik / count);
+        ss<<"Test ="<<count<<"\tuser\t"<<n_session<<"\tsessions, Average User log-likelihood="<<exp(-sum_loglik/(double)count);
         return ss.str();
     }
 };

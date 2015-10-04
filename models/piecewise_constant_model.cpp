@@ -33,20 +33,20 @@ int PiecewiseConstantModel::train(const UserContainer *data){
       iter != data->end(); ++iter){
     vector<double> userLambda(NUM_BIN,EPS_LAMBDA);
     vector<int> countInBin(NUM_BIN,0);
-    vector<double> countBeforeBin(NUM_BIN,0.0);
+    vector<double> timeBeforeBin(NUM_BIN,0.0);
     const vector<Session> &sessions = iter->second.get_sessions();
     for(int i = 1 ; i < (int)sessions.size() ; i++){
       int target_bin = sessions[i].binFromLastSession();
       countInBin[target_bin]++;
       for(int b = 0 ; b < target_bin; b++){
-        countBeforeBin[b] += BIN_WIDTH;
+        timeBeforeBin[b] += BIN_WIDTH;
       }
-      countBeforeBin[target_bin] += 
+      timeBeforeBin[target_bin] += 
         sessions[i].start.hours() - sessions[i-1].end.hours();
     }
     for (int i = 0 ; i < NUM_BIN ; i++){
-      if(countBeforeBin[i] > 0 && countInBin[i] > 0)
-        userLambda[i] = countInBin[i]/(double)(countBeforeBin[i]);
+      if(timeBeforeBin[i] > 0 && countInBin[i] > 0)
+        userLambda[i] = countInBin[i]/(double)(timeBeforeBin[i]);
     }
     lambda_u.insert(make_pair(iter->first, userLambda));
   }
@@ -55,7 +55,7 @@ int PiecewiseConstantModel::train(const UserContainer *data){
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
   auto ite = _user_train->find(user.id());
   if(ite == _user_train->end()){
-    return PredictRes(-1, 0.0, false);
+    return PredictRes(-1, 0.0, 0.0, false);
   }else{
     const vector<Session> &train_sessions = ite->second.get_sessions();
     const vector<Session> &test_sessions = user.get_sessions();
@@ -88,7 +88,8 @@ ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
       prev_end = test_sessions[i].end.hours();
     }
     return PredictRes(0,
-        loglik/num_sessions,
+        loglik,
+        num_sessions,
         true);
   } 
 }

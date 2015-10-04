@@ -172,7 +172,7 @@ ModelBase::PredictRes HawkesProcessModel::predict(const User &user){
   auto ite = _user_train->find(user.id());
   long id = user.id();
   if(ite == _user_train->end()){
-    return PredictRes(0, 0, false);
+    return PredictRes(0, 0, 0.0,false);
   }else{
     const vector<Session> &train_sessions = ite->second.get_sessions();
     const vector<Session> &test_sessions = user.get_sessions();
@@ -241,7 +241,8 @@ ModelBase::PredictRes HawkesProcessModel::predict(const User &user){
     }   
 
     return PredictRes(0,
-        loglik/num_sessions,
+        loglik,
+        num_sessions,
         true);
   }
 }

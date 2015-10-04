@@ -8,12 +8,14 @@
 class ModelBase {
   public:
     struct PredictRes{
-        PredictRes(long n, double p, bool v):next_visit(n),
+        PredictRes(long n, double p, int s, bool v):next_visit(n),
                                              loglikelihood(p),
+                                             n_session(s),
                                              valid(v){}
         long next_visit;
         double loglikelihood;
         bool valid;
+        int n_session;
     };
     static ModelBase *makeModel(const char* model_name);
   public:

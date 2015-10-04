@@ -51,7 +51,6 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
   vector<Feature> auxFeature = getAuxFeatureAtTime(uid, s_id, _hours);
   vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
   vector<Feature> jointFeature(auxFeature);
-
   //concatenate haekesFeature and auxFeature 
   //then return the SparseVector representation
   jointFeature.insert(jointFeature.end(),
@@ -127,7 +126,8 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
-  int target_bin = min(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH) );
+//  int target_bin = min(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH) );
+  int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
   // copy session_feature and append day_feature
   vector<Feature> auxFeature(sessions[s_id ].session_features);
   auxFeature.insert(auxFeature.end(), 
@@ -151,13 +151,13 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
 
   double prev_end = sessions[s_id - 1].end.hours();
   assert(_hours >= prev_end);
-  int target_bin = min(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
+  //int target_bin = min(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
+  int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
   // get the feature at bin 0 then for b = 1 : target_bin
   // add them add
-  vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, 
-      s_id, prev_end + BIN_WIDTH);
+  vector<Feature> hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
 
-  for(int b = 1 ; b <= target_bin; b++){
+  for(int b = 0 ; b < target_bin; b++){
     vector<Feature> tmpHawkes = getHawkesFeatureAtTime(uid, 
         s_id, prev_end + (b + 1) * BIN_WIDTH);
     for(int i = 0 ; i < (int)tmpHawkes.size(); i++){
@@ -206,7 +206,8 @@ void ConstructFeatureModel::buildVectorizedDataset(){
         double prev_end = all_sessions[j-1].end.hours();
         double start = all_sessions[j].start.hours();
         double end = all_sessions[j].end.hours();
-        int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN - 1);
+        //int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN - 1);
+        int bin = (int)((start - prev_end)/(double)BIN_WIDTH);
         // ctr :(uid, s_id, y, bin, start, end)
         DataPoint data;
         // info about this data point
@@ -318,7 +319,7 @@ void ConstructFeatureModel::writeToFile(string path){
 
 
 ModelBase::PredictRes ConstructFeatureModel::predict(const User &user){
-  return PredictRes(0,0,false);
+  return PredictRes(0,0,0.0,false);
 }
 
 const char * ConstructFeatureModel::modelName(){

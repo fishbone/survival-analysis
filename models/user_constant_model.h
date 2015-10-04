@@ -9,6 +9,7 @@
 
 class UserConstantModel : public ModelBase{
   friend class HawkesProcessModel;
+  friend class FeatureBasedModel;
   friend class PiecewiseConstantModel;
   public:
     int train(const UserContainer *data);

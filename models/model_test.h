@@ -16,7 +16,7 @@ class ModelTest : public ModelBase {
     }
 
     virtual PredictRes predict(const User &user){
-        return PredictRes(0, 0, false);
+        return PredictRes(0, 0, 0.0, false);
     }
     virtual int train(const UserContainer *data){
         train_data = data;
