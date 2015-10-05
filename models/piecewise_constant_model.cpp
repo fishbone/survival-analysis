@@ -53,8 +53,6 @@ double PiecewiseConstantModel::evalLoglik(vector<DataPoint> & data){
 }
 
 int PiecewiseConstantModel::train(const UserContainer *data){
-  cerr <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<endl;
-  getchar();
   initParams();
   ConstructFeatureModel ctrFeature(NO_FEATURE);
   ctrFeature.setData(_train_data, _test_data);
@@ -77,7 +75,11 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   d_lambda_bin = vector<double>(NUM_BIN, 0.0);
 
   double best_test = 2147483647.0;
-  for(int iter = 0; iter < max_iter ; iter++){
+  double scale = 1.0;
+  for(int iter = 1; iter <= max_iter ; iter++){
+    if(iter % 10 == 0){
+      scale *= 0.95;
+    }
     cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
     double test_log_lik = evalLoglik(test_data);                                                                   
     if(test_log_lik < best_test){                                               
@@ -94,15 +96,15 @@ int PiecewiseConstantModel::train(const UserContainer *data){
       double y = _point.y;
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
       double divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda);
-      d_lambda = momentum * d_lambda - lr_lambda  * (y - divider);
-      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * (y - divider);
+      d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
+      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);
       for(int b = 0 ; b < bin ; b++){
-        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * BIN_WIDTH;
+        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * scale * BIN_WIDTH;
         lambda_bin[b] += d_lambda_bin[b];
         lambda_bin[b] = max(lambda_bin[b], EPS_LAMBDA);
       }
       d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
-        - lr_lambda * ((y - bin*BIN_WIDTH) - divider);
+        - lr_lambda * scale *  ((y - bin*BIN_WIDTH) - divider);
       
 
       lambda_bin[bin] += d_lambda_bin[bin];

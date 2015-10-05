@@ -40,8 +40,8 @@ double UserConstantModel::evalLoglik(vector<DataPoint> & data){
   cout << "evaluated_user = "<< perUserCount.size()<<endl;
 //  cerr <<"=========Avg Perp = "<<exp(-sum_loglik/n_session);
 //  cerr <<"=========User-Avg Perp = "<<exp(-loglik/(double)perUserCount.size());
-  //return exp(-loglik/(double)perUserCount.size());                              
-  return exp(-sum_loglik/n_session);       
+  return exp(-loglik/(double)perUserCount.size());                              
+  //return exp(-sum_loglik/n_session);       
 }
 
 int UserConstantModel::train(const UserContainer *data){
@@ -64,14 +64,18 @@ int UserConstantModel::train(const UserContainer *data){
   }
   lambda = d_lambda = 0;
   double best_test = 2147483647.0;
-  for(int iter = 0; iter < max_iter ; iter++){
-    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
+  double scale = 1.0;
+  for(int iter = 1; iter <= max_iter ; iter++){
+    if(iter % 10 == 0){
+      scale *= 0.9;
+    }
+    cerr <<"Iter: "<<iter<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
     double test_log_lik = evalLoglik(test_data);                                                                   
     if(test_log_lik < best_test){                                               
       best_test = test_log_lik;                                                 
     }                                                                           
-    cerr <<"Iter: "<<iter+1<<" ------loglik(test_data)  = "<<test_log_lik<<endl;
-    cerr <<"Iter: "<<iter+1<<" ------best test loglik   = "<<best_test<<endl;  
+    cerr <<"Iter: "<<iter<<" ------loglik(test_data)  = "<<test_log_lik<<endl;
+    cerr <<"Iter: "<<iter<<" ------best test loglik   = "<<best_test<<endl;  
     for(int i = 0 ; i < (int)train_data.size() ; i++){
       if(i % 200000 == 0){
         cout <<"Training with SGD: " << i<<"/"<<train_data.size()<<endl;
@@ -80,8 +84,8 @@ int UserConstantModel::train(const UserContainer *data){
       long uid = _point.uid;                                                         
       double y = _point.y;  
       double divider = 1.0/(lambda_u[uid] + lambda);
-      d_lambda = momentum * d_lambda - lr_lambda  * (y - divider);
-      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * (y - divider);
+      d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
+      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u *scale *  (y - divider);
       lambda += d_lambda;
       lambda_u[uid] += d_lambda_u[uid];
       lambda = max(lambda, EPS_LAMBDA);

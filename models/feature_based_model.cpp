@@ -9,7 +9,6 @@ void FeatureBasedModel::initParams(){
 
   // feature-based parameters
   string _type = _config["feature_based"]["feature_type"].as<string>();
-  cerr <<"@@@@@@@@@@@@@@@@@@@@@@@ "<<_type<<endl;
   if(_type == "HAWKES_FEATURE"){
     feature_type = HAWKES_FEATURE;
   } else if(_type == "AUX_FEATURE"){
@@ -71,8 +70,6 @@ double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
 }
 
 int FeatureBasedModel::train(const UserContainer *data){
-  cerr <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<endl;
-  getchar();
   initParams();
   if(feature_type == AUX_FEATURE){
     cerr <<"building aux_feature only..."<<endl;
@@ -105,7 +102,11 @@ int FeatureBasedModel::train(const UserContainer *data){
   d_lambda_bin = vector<double>(NUM_BIN, 0.0);
 
   double best_test = 2147483647.0;
-  for(int iter = 0; iter < max_iter ; iter++){
+  double scale = 1.0;
+  for(int iter = 1; iter <= max_iter ; iter++){
+    if(iter % 10 == 0){
+      scale *= 0.95;
+    }
     cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
     double test_log_lik = evalLoglik(test_data);                                                                   
     if(test_log_lik < best_test){                                               
@@ -124,15 +125,15 @@ int FeatureBasedModel::train(const UserContainer *data){
       SparseVector int_x = _point.integral_x;
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
       double divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda + SparseVector::dotProduct(W,x));
-      d_lambda = momentum * d_lambda - lr_lambda  * (y - divider);
-      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * (y - divider);
+      d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
+      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);
       for(int b = 0 ; b < bin ; b++){
-        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * BIN_WIDTH;
+        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * scale * BIN_WIDTH;
         lambda_bin[b] += d_lambda_bin[b];
         lambda_bin[b] = max(lambda_bin[b], EPS_LAMBDA);
       }
       d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
-        - lr_lambda * ((y - bin*BIN_WIDTH) - divider);
+        - lr_lambda * scale * ((y - bin*BIN_WIDTH) - divider);
 
 
       lambda_bin[bin] += d_lambda_bin[bin];
@@ -145,7 +146,7 @@ int FeatureBasedModel::train(const UserContainer *data){
       SparseVector gradW = int_x - x * divider;
       vector<int> indices = gradW.getIndices();
       dW.mulEq(momentum, &indices);
-      dW.subEq(gradW * lr_w, &indices);
+      dW.subEq(gradW * lr_w * scale, &indices);
       W.addEq(dW, &indices);
       W.threshold(0, &indices);
     }
