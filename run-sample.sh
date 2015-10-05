@@ -9,5 +9,6 @@
        --stay_data_template=./daily/%s.daily \
        --app_data_template=./app/%s.app \
        --profile_data_template=./prof/%s.prof \
-       --config=param.info
+       --config=param.info \
+       --loadparam="dpa"
 #       --models=hawkes_process_model \
