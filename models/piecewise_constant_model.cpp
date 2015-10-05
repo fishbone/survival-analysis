@@ -1,118 +1,144 @@
 #include "user_constant_model.h"
+#include "global_constant_model.h"
 #include "piecewise_constant_model.h"
+#include "construct_feature_model.h"
 #include "data_io.h"
 #include <iostream>
 using namespace std;
-double PiecewiseConstantModel::evalTrainPerp(const UserContainer * data){
-  int n_session = 0;
-  int n_user = 0;
-  double sum_loglik = 0.0;
-  for(auto iter = data->begin();
-      iter != data->end(); ++iter){
-    int index = 0;
-    double prev_end = -1;
-    long uid = iter->first;
-    if(iter->second.get_sessions().size() > 1){
-     n_user ++;
+void PiecewiseConstantModel::initParams(){                                              
+
+  // feature-based parameters                                                      
+  lr_lambda = _config["lr_lambda"].as<double>();
+  lr_lambda_u = _config["lr_lambda_u"].as<double>();              
+  momentum  = _config["momentum"].as<double>();                   
+  max_iter  = _config["max_iter"].as<int>();
+  cerr <<"=====lr_lambda = "<<lr_lambda<<endl                                      
+    <<"=====lr_lambda_u= "<<lr_lambda_u<<endl                                      
+    <<"=====momentum = "<<momentum<<endl;
+  // weights for features                                                          
+  //W  = SparseVector::rand_init(num_feature);                                     
+}  
+double PiecewiseConstantModel::evalLoglik(vector<DataPoint> & data){
+  double loglik = 0.0;                                                          
+  unordered_map<long, int> perUserCount;                                        
+  unordered_map<long, double> perUserLik;                                       
+  long n_session =  data.size();
+  double sum_loglik =0.0;
+  for(int i = 0 ; i < (int)data.size(); i++){                                   
+    DataPoint &_point = data[i];                                                
+    long uid = _point.uid;
+    assert(lambda_u.find(uid) != lambda_u.end()); 
+    double y = _point.y;
+    int bin = min(NUM_BIN-1, (int)(y/(double)BIN_WIDTH));
+    double _loglik = log(lambda_u[uid] + lambda + lambda_bin[bin])
+      - y * (lambda + lambda_u[uid]);
+    for(int b = 0 ; b < bin ; b++){
+      _loglik -= lambda_bin[b] * BIN_WIDTH;
     }
-    for (auto j = iter->second.get_sessions().begin();
-        j!= iter->second.get_sessions().end();
-        ++j){
-      if (index == 0){ 
-        index++;
-        prev_end = j->end.hours();
-      } else{
-        double loglik = 0.0;
-        int target_bin = (j->start.hours() - prev_end)/(double)BIN_WIDTH;
-        assert(target_bin >= 0);
-        target_bin = min(target_bin, NUM_BIN - 1);
-        double lambda = lambda_u[uid][target_bin];
-        loglik += log(lambda);
-        for (int j = 0; j < target_bin; j++) {
-          double lambda_j = lambda_u[uid][j];
-          if (lambda_j != 0.0){
-            double normalized = lambda_j*BIN_WIDTH;
-            loglik += - normalized;
-          }
-        }
-        double lambda_target = lambda_u[uid][target_bin];
-        double normalized = 
-          lambda_target * (j->start.hours() - 
-              (prev_end + target_bin * BIN_WIDTH));
-        loglik -= normalized;
-        prev_end = j->end.hours();
-        n_session ++;
-        sum_loglik += loglik/(double)(iter->second.get_sessions().size()-1);
-      }
-    }
-  }
-  //cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-sum_loglik/(double)n_session)<<endl;
-  cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-sum_loglik/(double)n_user)<<endl;
+    assert(y >= bin * BIN_WIDTH);
+    _loglik -= (y - bin * BIN_WIDTH) * lambda_bin[bin];
+    perUserCount[uid] ++;                                                       
+    perUserLik[uid] += _loglik;                                                 
+    //    loglik += _loglik;                                                    
+  }                                                                             
+  for(auto iter : perUserCount){                                                
+    loglik += perUserLik[iter.first]/iter.second;
+    sum_loglik += perUserLik[iter.first];
+  }                                                                             
+  cout << "evaluated_user = "<< perUserCount.size()<<endl;
+  //  cerr <<"=========Avg Perp = "<<exp(-sum_loglik/n_session);
+  //  cerr <<"=========User-Avg Perp = "<<exp(-loglik/(double)perUserCount.size());
+  //return exp(-loglik/(double)perUserCount.size());                              
+  return exp(-sum_loglik/n_session);       
 }
+
 int PiecewiseConstantModel::train(const UserContainer *data){
-  _user_train = data;
-  //some bins will have no data, which will result in very poor estimation
-  //here we simply fill them by the global_constant estimate...
-  for(auto iter = data->begin();
-      iter != data->end(); ++iter){
-    vector<double> userLambda(NUM_BIN,EPS_LAMBDA);
-    vector<int> countInBin(NUM_BIN,0);
-    vector<double> timeBeforeBin(NUM_BIN,0.0);
-    const vector<Session> &sessions = iter->second.get_sessions();
-    for(int i = 1 ; i < (int)sessions.size() ; i++){
-      int target_bin = sessions[i].binFromLastSession();
-      countInBin[target_bin]++;
-      for(int b = 0 ; b < target_bin; b++){
-        timeBeforeBin[b] += BIN_WIDTH;
-      }
-      timeBeforeBin[target_bin] += 
-        (sessions[i].start.hours() - (target_bin * BIN_WIDTH + sessions[i-1].end.hours()));
-    }
-    for (int i = 0 ; i < NUM_BIN ; i++){
-      if(timeBeforeBin[i] > 0 && countInBin[i] > 0)
-        userLambda[i] = countInBin[i]/(double)(timeBeforeBin[i]);
-    }
-    lambda_u.insert(make_pair(iter->first, userLambda));
+  cerr <<"@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@"<<endl;
+  getchar();
+  initParams();
+  ConstructFeatureModel ctrFeature(NO_FEATURE);
+  ctrFeature.setData(_train_data, _test_data);
+  assert(_train_data != nullptr);                                                  
+  assert(_test_data != nullptr);
+  ctrFeature.train(_train_data);                                                   
+  vector<DataPoint> train_data = ctrFeature.getTrainSet();
+  vector<DataPoint> test_data = ctrFeature.getTestSet();
+  cerr <<"=======# train_sessions = "<<train_data.size()<<endl
+    <<"=======# test_sessions = "<<test_data.size()<<endl;
+
+  for(auto iter = data->begin();                                                   
+      iter != data->end(); ++iter){   
+    long uid = iter->first;
+    lambda_u[uid] = EPS_LAMBDA;
+    d_lambda_u[uid] = 0.0;
   }
-  cerr <<"finished training "<< string(modelName());
-  evalTrainPerp(data);
+  lambda = d_lambda = 0;
+  lambda_bin = vector<double>(NUM_BIN, EPS_LAMBDA);
+  d_lambda_bin = vector<double>(NUM_BIN, 0.0);
+
+  double best_test = 2147483647.0;
+  for(int iter = 0; iter < max_iter ; iter++){
+    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
+    double test_log_lik = evalLoglik(test_data);                                                                   
+    if(test_log_lik < best_test){                                               
+      best_test = test_log_lik;                                                 
+    }                                                                           
+    cerr <<"Iter: "<<iter+1<<" ------loglik(test_data)  = "<<test_log_lik<<endl;
+    cerr <<"Iter: "<<iter+1<<" ------best test loglik   = "<<best_test<<endl;  
+    for(int i = 0 ; i < (int)train_data.size() ; i++){
+      if(i % 200000 == 0){
+        cout <<"Training with SGD: " << i<<"/"<<train_data.size()<<endl;
+      }
+      DataPoint & _point = train_data[i];
+      long uid = _point.uid;                                                         
+      double y = _point.y;
+      int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
+      double divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda);
+      d_lambda = momentum * d_lambda - lr_lambda  * (y - divider);
+      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * (y - divider);
+      for(int b = 0 ; b < bin ; b++){
+        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * BIN_WIDTH;
+        lambda_bin[b] += d_lambda_bin[b];
+        lambda_bin[b] = max(lambda_bin[b], EPS_LAMBDA);
+      }
+      d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
+        - lr_lambda * ((y - bin*BIN_WIDTH) - divider);
+      
+
+      lambda_bin[bin] += d_lambda_bin[bin];
+      lambda_bin[bin] = max(lambda_bin[bin], EPS_LAMBDA); 
+      lambda += d_lambda;
+      lambda_u[uid] += d_lambda_u[uid];
+      lambda = max(lambda, EPS_LAMBDA);
+      lambda_u[uid] = max(lambda_u[uid], EPS_LAMBDA);
+    }
+  }
+
+  cerr <<"finished training "<< string(modelName());                            
+  // evalTrainPerp(data);
   return 0;
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){
+  return PredictRes(-1, 0.0, 0.0, false);
   auto ite = _user_train->find(user.id());
-  if(ite == _user_train->end()){
+  if(ite == _user_train->end() || ite->second.get_sessions().size() == 0){
     return PredictRes(-1, 0.0, 0.0, false);
   }else{
+    // this compute 1/n_session * p(t' <= t), not the log-likelihood...
     const vector<Session> &train_sessions = ite->second.get_sessions();
     const vector<Session> &test_sessions = user.get_sessions();
     double loglik = 0.0;
     double prev_end = train_sessions.back().end.hours();
-    int small =0;
-    int total = 0;
+    double lambda = lambda_u[user.id()];
     int num_sessions = (int)test_sessions.size();
     for(int i = 0 ; i < num_sessions ; i++){
-      int target_bin = (test_sessions[i].start.hours() - prev_end)/(double)BIN_WIDTH;
-      if(target_bin < 0){
-        cerr << i<<" "<<user.id()<<" "<<test_sessions[i].start.hours() <<" "<<prev_end<<" "<<target_bin<<endl;
-      }
-      assert(target_bin >= 0);
-      target_bin = min(target_bin, NUM_BIN - 1);
-      double lambda = lambda_u[user.id()][target_bin];
-      loglik += log(lambda);
-      for (int j = 0; j < target_bin; j++) {
-        double lambda_j = lambda_u[user.id()][j];
-        if (lambda_j != 0.0){
-          double normalized = lambda_j*BIN_WIDTH;
-          loglik += - normalized;
-        }
-      }
-      double lambda_target = lambda_u[user.id()][target_bin];
-      double normalized = 
-        lambda_target * (test_sessions[i].start.hours() - 
-            (prev_end + target_bin * BIN_WIDTH));
-      loglik -= normalized;
+      double log_density = log(lambda);
+      double integral_lambda = lambda*(test_sessions[i].start.hours() - prev_end);
+      // 1 - G(t) = 1 - exp(-int_{0}^t lambda(t) dt)
+      loglik += log_density - integral_lambda;
       prev_end = test_sessions[i].end.hours();
-    }
+    }   
+
     return PredictRes(0,
         loglik,
         num_sessions,

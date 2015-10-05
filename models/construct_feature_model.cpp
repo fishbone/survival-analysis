@@ -50,6 +50,7 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
       return SparseVector(auxFeature);
     } else if(feature_type == HAWKES_FEATURE){
       hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
+      return SparseVector(hawkesFeature);
     } else if(feature_type == BOTH_FEATURE){
       auxFeature = getAuxFeatureAtTime(uid, s_id, _hours);
       hawkesFeature = getHawkesFeatureAtTime(uid, s_id, _hours);
@@ -59,6 +60,7 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
       return SparseVector(jointFeature);
     }
   }
+  cerr <<"feature_type = "<<feature_type<<endl;
   assert(false); // shoudn't get here... wrong feature_type ?
 }
 /*
@@ -116,6 +118,7 @@ SparseVector ConstructFeatureModel::getIntegralFeatureAtTime(long uid,
       return SparseVector(auxFeature);
     } else if(feature_type == HAWKES_FEATURE){
       hawkesFeature = getIntegralHawkesFeatureAtTime(uid, s_id, _hours);
+      return SparseVector(hawkesFeature);
     } else if(feature_type == BOTH_FEATURE){
       auxFeature = getIntegralAuxFeatureAtTime(uid, s_id, _hours);
       hawkesFeature = getIntegralHawkesFeatureAtTime(uid, s_id, _hours);
