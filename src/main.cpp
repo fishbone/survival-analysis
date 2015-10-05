@@ -29,6 +29,7 @@ bool parse_param(int argc, char *argv[], variables_map &vm){
             ("profile_data_template", value<std::string>()->required(), "The template of the directory for the profile data")
             ("app_data_template", value<std::string>()->required(), "The template of the directory for the app data")
             ("config", value<std::string>()->required(), "The configure file for parameters of the model")
+            ("loadparam", value<std::string>()->required(), "The params to be loaded")
             ("help", "produce help message");
     
     try{
@@ -116,17 +117,20 @@ int main(int argc, char *argv[]){
     UserContainer train_data;
     train_data.reserve(10000000);
     cerr<<"Reading data for training dataset"<<endl;
-    read_data(vm["stay_data_template"].as<std::string>().c_str(),
-              vm["app_data_template"].as<std::string>().c_str(),
-              vm["profile_data_template"].as<std::string>().c_str(),
-              vm["train_start"].as<std::string>().c_str(),
-              vm["train_end"].as<std::string>().c_str(),
-              train_data);
+    read_data(
+        vm["loadparam"].as<std::string>(),
+        vm["stay_data_template"].as<std::string>().c_str(),
+        vm["app_data_template"].as<std::string>().c_str(),
+        vm["profile_data_template"].as<std::string>().c_str(),
+        vm["train_start"].as<std::string>().c_str(),
+        vm["train_end"].as<std::string>().c_str(),
+        train_data);
 
     UserContainer test_data;
     test_data.reserve(10000000);
     cerr<<"Reading data for testing dataset"<<endl;
-    read_data(vm["stay_data_template"].as<std::string>().c_str(),
+    read_data(vm["loadparam"].as<std::string>(),
+              vm["stay_data_template"].as<std::string>().c_str(),
               vm["app_data_template"].as<std::string>().c_str(),
               vm["profile_data_template"].as<std::string>().c_str(),
               vm["test_start"].as<std::string>().c_str(),
