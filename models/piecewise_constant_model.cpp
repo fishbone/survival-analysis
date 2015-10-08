@@ -5,6 +5,9 @@
 #include "data_io.h"
 #include <iostream>
 using namespace std;
+double PiecewiseConstantModel::predictRateValue(long uid, int s_id, double _time){
+  return 0;
+}
 void PiecewiseConstantModel::initParams(){                                              
 
   // feature-based parameters                                                      
@@ -18,7 +21,7 @@ void PiecewiseConstantModel::initParams(){
   // weights for features                                                          
   //W  = SparseVector::rand_init(num_feature);                                     
 }  
-double PiecewiseConstantModel::evalLoglik(vector<DataPoint> & data){
+double PiecewiseConstantModel::evalPerp(vector<DataPoint> & data){
   double loglik = 0.0;                                                          
   unordered_map<long, int> perUserCount;                                        
   unordered_map<long, double> perUserLik;                                       
@@ -39,16 +42,12 @@ double PiecewiseConstantModel::evalLoglik(vector<DataPoint> & data){
     _loglik -= (y - bin * BIN_WIDTH) * lambda_bin[bin];
     perUserCount[uid] ++;                                                       
     perUserLik[uid] += _loglik;                                                 
-    //    loglik += _loglik;                                                    
   }                                                                             
   for(auto iter : perUserCount){                                                
     loglik += perUserLik[iter.first]/iter.second;
     sum_loglik += perUserLik[iter.first];
   }                                                                             
   cout << "evaluated_user = "<< perUserCount.size()<<endl;
-  //  cerr <<"=========Avg Perp = "<<exp(-sum_loglik/n_session);
-  //  cerr <<"=========User-Avg Perp = "<<exp(-loglik/(double)perUserCount.size());
-  //return exp(-loglik/(double)perUserCount.size());                              
   return exp(-sum_loglik/n_session);       
 }
 
@@ -59,8 +58,8 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   assert(_train_data != nullptr);                                                  
   assert(_test_data != nullptr);
   ctrFeature.train(_train_data);                                                   
-  vector<DataPoint> train_data = ctrFeature.getTrainSet();
-  vector<DataPoint> test_data = ctrFeature.getTestSet();
+  train_data = ctrFeature.getTrainSet();
+  test_data = ctrFeature.getTestSet();
   cerr <<"=======# train_sessions = "<<train_data.size()<<endl
     <<"=======# test_sessions = "<<test_data.size()<<endl;
 
@@ -80,8 +79,8 @@ int PiecewiseConstantModel::train(const UserContainer *data){
     if(iter % 10 == 0){
       scale *= 0.95;
     }
-    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
-    double test_log_lik = evalLoglik(test_data);                                                                   
+    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalPerp(train_data)<<endl;
+    double test_log_lik = evalPerp(test_data);
     if(test_log_lik < best_test){                                               
       best_test = test_log_lik;                                                 
     }                                                                           
@@ -105,7 +104,6 @@ int PiecewiseConstantModel::train(const UserContainer *data){
       }
       d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
         - lr_lambda * scale *  ((y - bin*BIN_WIDTH) - divider);
-      
 
       lambda_bin[bin] += d_lambda_bin[bin];
       lambda_bin[bin] = max(lambda_bin[bin], EPS_LAMBDA); 
@@ -116,8 +114,10 @@ int PiecewiseConstantModel::train(const UserContainer *data){
     }
   }
 
-  cerr <<"finished training "<< string(modelName());                            
-  // evalTrainPerp(data);
+  cerr <<"finished training "<< string(modelName()) << endl;
+  string stratified_out = _config["stratified_output"].as<string>();               
+  cerr <<"printStratifiedPerp ------" << stratified_out <<endl;
+  printStratifiedPerp(stratified_out); 
   return 0;
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){

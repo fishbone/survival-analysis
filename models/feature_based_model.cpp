@@ -5,6 +5,9 @@
 #include "data_io.h"
 #include <iostream>
 using namespace std;
+double FeatureBasedModel::predictRateValue(long uid, int s_id, double _time){
+  return 0.0;
+}
 void FeatureBasedModel::initParams(){                                              
 
   // feature-based parameters
@@ -32,7 +35,7 @@ void FeatureBasedModel::initParams(){
   // weights for features                                                          
   //W  = SparseVector::rand_init(num_feature);                                     
 }  
-double FeatureBasedModel::evalLoglik(vector<DataPoint> & data){
+double FeatureBasedModel::evalPerp(vector<DataPoint> & data){
   double loglik = 0.0;                                                          
   unordered_map<long, int> perUserCount;                                        
   unordered_map<long, double> perUserLik;                                       
@@ -86,8 +89,8 @@ int FeatureBasedModel::train(const UserContainer *data){
   assert(_train_data != nullptr);                                                  
   assert(_test_data != nullptr);
   ctrFeature.train(_train_data);                                                   
-  vector<DataPoint> train_data = ctrFeature.getTrainSet();
-  vector<DataPoint> test_data = ctrFeature.getTestSet();
+  train_data = ctrFeature.getTrainSet();
+  test_data = ctrFeature.getTestSet();
   cerr <<"=======# train_sessions = "<<train_data.size()<<endl
     <<"=======# test_sessions = "<<test_data.size()<<endl;
 
@@ -107,8 +110,8 @@ int FeatureBasedModel::train(const UserContainer *data){
     if(iter % 10 == 0){
       scale *= 0.95;
     }
-    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
-    double test_log_lik = evalLoglik(test_data);                                                                   
+    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalPerp(train_data)<<endl;
+    double test_log_lik = evalPerp(test_data);                                                                   
     if(test_log_lik < best_test){                                               
       best_test = test_log_lik;                                                 
     }                                                                           
@@ -152,7 +155,10 @@ int FeatureBasedModel::train(const UserContainer *data){
     }
   }
 
-  cerr <<"finished training "<< string(modelName());                            
+
+  cerr <<"finished training "<< string(modelName())<<endl;
+  string stratified_out = _config["stratified_output"].as<string>();            
+  printStratifiedPerp(stratified_out); 
   // evalTrainPerp(data);
   return 0;
 }

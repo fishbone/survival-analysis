@@ -5,6 +5,7 @@
 #include <fstream>
 #include <unordered_map>
 #include <google/dense_hash_map>
+#include <google/sparse_hash_map>
 #include <iterator>
 #include <random>
 #include <tuple>
@@ -13,26 +14,27 @@
 #include "feature.h"
 #include "jsoncons/json.hpp"
 
-typedef google::dense_hash_map<int, FLOAT>::const_iterator VecIterator;
+//typedef google::dense_hash_map<int, FLOAT>::const_iterator VecIterator;
+typedef google::sparse_hash_map<int, FLOAT>::const_iterator VecIterator;
 
 class SparseVector {
   public:
 
     SparseVector(){
-      _feature.set_empty_key(-1);
-      _feature.set_deleted_key(-2);
+//      _feature.set_empty_key(-1);
+//      _feature.set_deleted_key(-2);
     }
     SparseVector(std::vector<Feature> &s){
-      _feature.set_empty_key(-1);
-      _feature.set_deleted_key(-2);
+//      _feature.set_empty_key(-1);
+//      _feature.set_deleted_key(-2);
       for(auto &f : s){
         assert(f.first >= 0);
         _feature.insert(f);
       }
     }
     SparseVector(int n, std::vector<Feature> *s){
-      _feature.set_empty_key(-1);
-      _feature.set_deleted_key(-2);
+//      _feature.set_empty_key(-1);
+//      _feature.set_deleted_key(-2);
       va_list arguments;
       va_start(arguments, s);
       for(int i = 0; i != n; ++i){
@@ -45,8 +47,8 @@ class SparseVector {
       va_end(arguments);
     }
     SparseVector(std::unordered_map<int, double> &keyVal){
-      _feature.set_empty_key(-1);
-      _feature.set_deleted_key(-2);
+//      _feature.set_empty_key(-1);
+//      _feature.set_deleted_key(-2);
       for(auto iter = keyVal.begin(); iter != keyVal.end(); ++iter){
 
         _feature[iter->first] = iter->second;
@@ -148,6 +150,7 @@ class SparseVector {
     static double dotProduct(SparseVector &, SparseVector &) ;
 
   private:
-    google::dense_hash_map<int, FLOAT> _feature; // ind:val map
+    //google::dense_hash_map<int, FLOAT> _feature; // ind:val map
+    google::sparse_hash_map<int, FLOAT> _feature; // ind:val map
 };
 #endif

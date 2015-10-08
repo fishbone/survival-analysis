@@ -2,34 +2,16 @@
 #include "global_constant_model.h"
 #include <iostream>
 using namespace std;
-double GlobalConstantModel::evalTrainPerp(const UserContainer *data){
-    double loglik = 0.0;
-    int n_session = 0;
-    int n_user = 0;
-  for(auto iter = data->begin();
-      iter != data->end(); ++iter){
-    int index = 0;
-    double prev_end = -1;
-    if( iter->second.get_sessions().size() > 1){
-      n_user ++;
-    }
-    for (auto j = iter->second.get_sessions().begin();
-        j!= iter->second.get_sessions().end();
-        ++j){
-      if (index == 0){
-        index++;
-        prev_end = j->end.hours();
-      } else{
-        double log_density = log(lambda);
-        double integral_lambda = lambda*(j->start.hours() - prev_end);
-        prev_end = j->end.hours();
-        loglik += (log_density - integral_lambda)/(double)( iter->second.get_sessions().size()-1);
-        n_session ++;
-      }
-    }
-  }
-  //cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-loglik/(double)n_session)<<endl;
-  cerr <<" train session = "<<n_session<<" avg perp = "<<exp(-loglik/(double)n_user)<<endl;
+double GlobalConstantModel::predictGofT(DataPoint & data, double t){
+  return exp(-lambda * t);
+}
+double GlobalConstantModel::predictRateValue(long uid, int s_id, double _time){
+  return lambda;
+}
+double GlobalConstantModel::evalPerp(vector<DataPoint> & data){
+  cerr <<"global_constant_model not implemented evalPerp..." <<endl;
+  assert(false);
+  return -1.0;
 }
 int GlobalConstantModel::train(const UserContainer *data){
   double total_time = 0;
@@ -54,8 +36,6 @@ int GlobalConstantModel::train(const UserContainer *data){
     }
   }
   lambda = session_num / total_time;
-  cerr <<"finished training "<< string(modelName());                            
-   evalTrainPerp(data);
   return 0;
 }
 

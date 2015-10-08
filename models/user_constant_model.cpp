@@ -4,6 +4,12 @@
 #include "data_io.h"
 #include <iostream>
 using namespace std;
+double UserConstantModel::predictGofT(DataPoint &  data, double t){
+  return exp(-t *(lambda_u[uid] + lambda));
+}
+double UserConstantModel::predictRateValue(long uid, int s_id, double _time){
+  return lambda_u[uid] + lambda; 
+}
 void UserConstantModel::initParams(){                                              
 
   // feature-based parameters                                                      
@@ -17,7 +23,7 @@ void UserConstantModel::initParams(){
   // weights for features                                                          
   //W  = SparseVector::rand_init(num_feature);                                     
 }  
-double UserConstantModel::evalLoglik(vector<DataPoint> & data){
+double UserConstantModel::evalPerp(vector<DataPoint> & data){
   double loglik = 0.0;                                                          
   unordered_map<long, int> perUserCount;                                        
   unordered_map<long, double> perUserLik;                                       
@@ -37,11 +43,11 @@ double UserConstantModel::evalLoglik(vector<DataPoint> & data){
     loglik += perUserLik[iter.first]/iter.second;
     sum_loglik += perUserLik[iter.first];
   }                                                                             
-  cout << "evaluated_user = "<< perUserCount.size()<<endl;
+//  cout << "evaluated_user = "<< perUserCount.size()<<endl;
 //  cerr <<"=========Avg Perp = "<<exp(-sum_loglik/n_session);
 //  cerr <<"=========User-Avg Perp = "<<exp(-loglik/(double)perUserCount.size());
-  return exp(-loglik/(double)perUserCount.size());                              
-  //return exp(-sum_loglik/n_session);       
+//  return exp(-loglik/(double)perUserCount.size());                              
+  return exp(-sum_loglik/n_session);       
 }
 
 int UserConstantModel::train(const UserContainer *data){
@@ -51,8 +57,8 @@ int UserConstantModel::train(const UserContainer *data){
   assert(_train_data != nullptr);                                                  
   assert(_test_data != nullptr);
   ctrFeature.train(_train_data);                                                   
-  vector<DataPoint> train_data = ctrFeature.getTrainSet();
-  vector<DataPoint> test_data = ctrFeature.getTestSet();
+  train_data = ctrFeature.getTrainSet();
+  test_data = ctrFeature.getTestSet();
   cerr <<"=======# train_sessions = "<<train_data.size()<<endl
     <<"=======# test_sessions = "<<test_data.size()<<endl;
 
@@ -69,8 +75,8 @@ int UserConstantModel::train(const UserContainer *data){
     if(iter % 10 == 0){
       scale *= 0.9;
     }
-    cerr <<"Iter: "<<iter<<" ------loglik(train_data) = "<<evalLoglik(train_data)<<endl;
-    double test_log_lik = evalLoglik(test_data);                                                                   
+    cerr <<"Iter: "<<iter<<" ------loglik(train_data) = "<<evalPerp(train_data)<<endl;
+    double test_log_lik = evalPerp(test_data);                                                                   
     if(test_log_lik < best_test){                                               
       best_test = test_log_lik;                                                 
     }                                                                           
@@ -93,7 +99,10 @@ int UserConstantModel::train(const UserContainer *data){
     }
   }
 
-  cerr <<"finished training "<< string(modelName());                            
+  cerr <<"finished training "<< string(modelName())<<endl;;
+  string stratified_out = _config["stratified_output"].as<string>(); 
+  cerr <<"printStratifiedPerp output to "<<stratified_out << endl;
+  printStratifiedPerp(stratified_out);
   // evalTrainPerp(data);
   return 0;
 }

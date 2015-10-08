@@ -12,6 +12,18 @@
 #include <iostream>
 using namespace std;
 const static int LABEL_INDEX = 0;
+double ConstructFeatureModel::predictRateValue(long uid, int s_id, double _time){
+  cerr <<"shouldn't call predictValueRate for ConstructFeatureModel !!" << endl;
+  assert(false);
+  return 0.0;
+}
+
+double ConstructFeatureModel::evalPerp(vector<DataPoint> & data){                    
+    cerr <<"global_constant_model not implemented evalPerp..." <<endl;               
+      assert(false);                                                                   
+        return -1.0;                                                                                                                                                              
+} 
+
 void ConstructFeatureModel::initParams(){
 
   // hawkes parameters
@@ -35,8 +47,6 @@ void ConstructFeatureModel::initParams(){
   } 
   num_kernel = (int)kernels.size();
 }
-
-
 //get feature in SparsesVector format for give (uid, session_id, _time)
 SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
     int s_id, double _hours){
@@ -143,21 +153,19 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
 
   const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(_hours >= 0);
-  //  return vector<Feature>();  
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
-  //  int target_bin = min(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH) );
+  assert(_hours >= prev_end);
   int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
   // copy session_feature and append day_feature
-  vector<Feature> auxFeature(sessions[s_id ].session_features);
+  vector<Feature> auxFeature(sessions[s_id - 1].session_features);
   auxFeature.insert(auxFeature.end(), 
       sessions[s_id - 1].day_features->begin(), sessions[s_id - 1].day_features->end());
 
   //since session_feature and day_feature are the same within the same
   //session, we just scale by a factor of target_bin to get the desired number
   for(int i = 0 ; i < (int)auxFeature.size(); i++){
-    //auxFeature[i].second *= (target_bin + 1);
     //aux feaure does not vary within this session, so integration
     //can be done exactly
     auxFeature[i].second *= (_hours - prev_end);
@@ -254,6 +262,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
   }
   for(int i = 0 ; i < (int)all_uids.size(); ++i){
     long uid = all_uids[i];
+    //
     for(int j = 0 ; j < (int)tmpMap[uid].size() ; j++){
       if(isTestSet[uid][tmpMap[uid][j].s_id] == true){
         test_data.push_back(tmpMap[uid][j]);

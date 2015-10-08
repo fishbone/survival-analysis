@@ -14,7 +14,8 @@ class PiecewiseConstantModel : public ModelBase{
     int train(const UserContainer *data);
     const char *modelName();
     PredictRes predict(const User &user);
-    double evalLoglik(std::vector<DataPoint> &);
+    double predictRateValue(long, int, double); 
+    double evalPerp(std::vector<DataPoint> &);
     void initParams();
     double evalTrainPerp(const UserContainer *);
     typedef std::unordered_map<long, double> LambdaU;
