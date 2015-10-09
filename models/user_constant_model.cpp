@@ -5,10 +5,10 @@
 #include <iostream>
 using namespace std;
 double UserConstantModel::predictGofT(DataPoint &  data, double t){
-  return exp(-t *(lambda_u[uid] + lambda));
+  return exp(-t *(lambda_u[data.uid] + lambda));
 }
-double UserConstantModel::predictRateValue(long uid, int s_id, double _time){
-  return lambda_u[uid] + lambda; 
+double UserConstantModel::predictRateValue(DataPoint& data, double t){
+  return lambda_u[data.uid] + lambda; 
 }
 void UserConstantModel::initParams(){                                              
 
@@ -43,10 +43,6 @@ double UserConstantModel::evalPerp(vector<DataPoint> & data){
     loglik += perUserLik[iter.first]/iter.second;
     sum_loglik += perUserLik[iter.first];
   }                                                                             
-//  cout << "evaluated_user = "<< perUserCount.size()<<endl;
-//  cerr <<"=========Avg Perp = "<<exp(-sum_loglik/n_session);
-//  cerr <<"=========User-Avg Perp = "<<exp(-loglik/(double)perUserCount.size());
-//  return exp(-loglik/(double)perUserCount.size());                              
   return exp(-sum_loglik/n_session);       
 }
 
@@ -101,9 +97,11 @@ int UserConstantModel::train(const UserContainer *data){
 
   cerr <<"finished training "<< string(modelName())<<endl;;
   string stratified_out = _config["stratified_output"].as<string>(); 
+  string expected_return_out = _config["expected_return_output"].as<string>(); 
   cerr <<"printStratifiedPerp output to "<<stratified_out << endl;
+  cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
   printStratifiedPerp(stratified_out);
-  // evalTrainPerp(data);
+  printStratifiedExpectedReturn(expected_return_out);
   return 0;
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){

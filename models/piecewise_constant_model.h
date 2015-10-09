@@ -14,7 +14,8 @@ class PiecewiseConstantModel : public ModelBase{
     int train(const UserContainer *data);
     const char *modelName();
     PredictRes predict(const User &user);
-    double predictRateValue(long, int, double); 
+    double predictGofT(DataPoint &, double);
+    double predictRateValue(DataPoint &, double); 
     double evalPerp(std::vector<DataPoint> &);
     void initParams();
     double evalTrainPerp(const UserContainer *);

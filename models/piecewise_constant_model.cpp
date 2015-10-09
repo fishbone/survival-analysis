@@ -5,8 +5,20 @@
 #include "data_io.h"
 #include <iostream>
 using namespace std;
-double PiecewiseConstantModel::predictRateValue(long uid, int s_id, double _time){
-  return 0;
+//G(t) = exp(-\int_0^t \lambda(t) dt)
+double PiecewiseConstantModel::predictGofT(DataPoint & data, double t){
+  int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
+  double eps = 1e-5;
+  double integral_lambda = 0.0;
+  for(int b = 0 ; b < bin ; b++){
+    integral_lambda += BIN_WIDTH * predictRateValue(data,((b+1)* BIN_WIDTH - eps));
+  }
+  integral_lambda += (t - bin * BIN_WIDTH) * predictRateValue(data, t);
+  return exp(-integral_lambda);
+}
+double PiecewiseConstantModel::predictRateValue(DataPoint &data, double t){
+  int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
+  return lambda_u[data.uid] + lambda + lambda_bin[bin];
 }
 void PiecewiseConstantModel::initParams(){                                              
 
@@ -115,9 +127,12 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   }
 
   cerr <<"finished training "<< string(modelName()) << endl;
-  string stratified_out = _config["stratified_output"].as<string>();               
+  string stratified_out = _config["stratified_output"].as<string>();
+  string expected_return_out = _config["expected_return_output"].as<string>();
   cerr <<"printStratifiedPerp ------" << stratified_out <<endl;
+  cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
   printStratifiedPerp(stratified_out); 
+  printStratifiedExpectedReturn(expected_return_out);
   return 0;
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){

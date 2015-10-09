@@ -18,8 +18,13 @@ class ModelTest : public ModelBase {
     virtual PredictRes predict(const User &user){
         return PredictRes(0, 0, 0.0, false);
     }
-    virtual double predictRateValue(long uid, int s_id, double _time){
+    virtual double predictRateValue(DataPoint & data, double t){
       std::cerr <<"shouldn't call predictValueRate for model_test !!" << std::endl;
+      assert(false);
+      return 0.0;
+    }
+    virtual double predictGofT(DataPoint & data, double t){
+      std::cerr <<"shouldn't call predictGofT for model_test !!" << std::endl;
       assert(false);
       return 0.0;
     }

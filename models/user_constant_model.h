@@ -13,10 +13,10 @@ class UserConstantModel : public ModelBase{
   friend class PiecewiseConstantModel;
   public:
     double predictGofT(DataPoint & , double);
+    double predictRateValue(DataPoint &, double);
     int train(const UserContainer *data);
     const char *modelName();
     PredictRes predict(const User &user);
-    double predictRateValue(long, int, double);
     double evalPerp(std::vector<DataPoint> &);
     void initParams();
     double evalTrainPerp(const UserContainer *);

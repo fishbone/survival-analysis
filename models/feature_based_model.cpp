@@ -5,7 +5,10 @@
 #include "data_io.h"
 #include <iostream>
 using namespace std;
-double FeatureBasedModel::predictRateValue(long uid, int s_id, double _time){
+double FeatureBasedModel::predictGofT(DataPoint & data, double t){
+  return 0.0;
+}
+double FeatureBasedModel::predictRateValue(DataPoint & data, double t){
   return 0.0;
 }
 void FeatureBasedModel::initParams(){                                              

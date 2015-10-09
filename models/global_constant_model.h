@@ -10,7 +10,7 @@ class GlobalConstantModel : public ModelBase{
   public:
     int train(const UserContainer *data);
     const char *modelName();
-    double predictRateValue(long, int, double);
+    double predictRateValue(DataPoint &, double);
     double predictGofT(DataPoint &, double);
     PredictRes predict(const User &user);
     double evalPerp(std::vector<DataPoint> & );

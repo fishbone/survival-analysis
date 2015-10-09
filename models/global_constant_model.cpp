@@ -5,7 +5,7 @@ using namespace std;
 double GlobalConstantModel::predictGofT(DataPoint & data, double t){
   return exp(-lambda * t);
 }
-double GlobalConstantModel::predictRateValue(long uid, int s_id, double _time){
+double GlobalConstantModel::predictRateValue(DataPoint & data, double t){
   return lambda;
 }
 double GlobalConstantModel::evalPerp(vector<DataPoint> & data){

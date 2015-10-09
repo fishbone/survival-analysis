@@ -12,7 +12,8 @@ class FeatureBasedModel : public ModelBase{
     int train(const UserContainer *data);
     const char *modelName();
     PredictRes predict(const User &user);
-    double predictRateValue(long, int, double);
+    double predictRateValue(DataPoint &, double);
+    double predictGofT(DataPoint &, double );
     double evalPerp(std::vector<DataPoint> &);
     void initParams();
     double evalTrainPerp(const UserContainer *);

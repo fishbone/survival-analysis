@@ -17,7 +17,9 @@ class ConstructFeatureModel : public ModelBase{
 
     PredictRes predict(const User &user);
 
-    double predictRateValue(long, int ,double);
+    double predictRateValue(DataPoint & , double);
+
+    double predictGofT(DataPoint&, double);
 
     double evalPerp(std::vector<DataPoint> & );
 

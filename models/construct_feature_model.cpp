@@ -12,7 +12,12 @@
 #include <iostream>
 using namespace std;
 const static int LABEL_INDEX = 0;
-double ConstructFeatureModel::predictRateValue(long uid, int s_id, double _time){
+double ConstructFeatureModel::predictGofT(DataPoint & data, double t){
+  cerr <<"shouldn't call predictGofT for ConstructFeatureModel !!" << endl;
+  assert(false);
+  return 0.0;
+}
+double ConstructFeatureModel::predictRateValue(DataPoint & data, double t){
   cerr <<"shouldn't call predictValueRate for ConstructFeatureModel !!" << endl;
   assert(false);
   return 0.0;
@@ -219,11 +224,10 @@ void ConstructFeatureModel::buildVectorizedDataset(){
     all_uids.push_back(iter->first);
   }
   std::random_shuffle(all_uids.begin(), all_uids.end());
-#pragma omp parallel
   {
     int n_user = 0; 
     auto s = time(nullptr);
-#pragma omp for
+#pragma omp parallel for
     for(int i = 0 ; i < (int)all_uids.size(); ++i){
       n_user ++;
 #pragma omp critical
