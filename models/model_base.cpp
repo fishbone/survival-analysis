@@ -139,6 +139,9 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
         double GofEnd = predictGofT(data, end_hours - prev_end); 
         double GofStart = predictGofT(data, start_hours - prev_end); 
         expected += (1 - GofEnd) - (1 - GofStart);
+        bool yes = iter->second[found+1].start < end_hours;
+         
+        cerr <<start_hours<< " " <<end_hours<<" "<< iter->second[found].start<<" "<<iter->second[found+1].start<< " "<<start_hours - prev_end<<" true = "<<yes<<" prob = "<<GofStart- GofEnd<<endl;
       }
     }
     cerr <<p.first<<" - "<<p.second<<endl;

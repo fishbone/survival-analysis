@@ -78,7 +78,10 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   test_data = ctrFeature.getTestSet();
   cerr <<"=======# train_sessions = "<<train_data.size()<<endl
     <<"=======# test_sessions = "<<test_data.size()<<endl;
-
+  for(auto data : train_data){
+   lambda_u_bin[data.uid] = vector<double>(NUM_BIN, EPS_LAMBDA);
+   d_lambda_u_bin[data.uid] = vector<double>(NUM_BIN, 0.0);
+  }
   lambda_bin = vector<double>(NUM_BIN, EPS_LAMBDA);
   d_lambda_bin = vector<double>(NUM_BIN, 0.0);
 
