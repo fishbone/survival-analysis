@@ -14,6 +14,12 @@
       "num_kernel": 30,
       "history_size": 5
     },
+    "adhoc":{
+      "user_session_hist" : "user_session_hist.txt",
+      "next_visit_time_hist" : "next_visit_time_hist.txt",
+      "session_length_hist" : "session_length_hist.txt",
+      "start_hour_of_day_hist" : "start_hour_of_day_hist.txt"
+    },
     "construct_feature":{
       "output_path" : "./hawkes_feature"
     }

@@ -31,6 +31,10 @@ class ConstructFeatureModel : public ModelBase{
     }
 
     void buildDataset();
+    
+    SparseVector getFeatureAtTime(long, int, double);
+    
+    SparseVector getIntegralFeatureAtTime(long, int, double);
 
     std::vector<DataPoint> & getTrainSet();
 
@@ -65,9 +69,7 @@ class ConstructFeatureModel : public ModelBase{
     std::vector<DataPoint> test_data;
 
     //getFeature in SparseFormat given (uid, session_id, time (in hours))
-    SparseVector getFeatureAtTime(long, int, double);
 
-    SparseVector getIntegralFeatureAtTime(long, int, double);
 
     std::vector<Feature> getHawkesFeatureAtTime(long, int, double );
 

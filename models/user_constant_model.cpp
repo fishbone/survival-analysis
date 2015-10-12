@@ -98,10 +98,12 @@ int UserConstantModel::train(const UserContainer *data){
   cerr <<"finished training "<< string(modelName())<<endl;;
   string stratified_out = _config["stratified_output"].as<string>(); 
   string expected_return_out = _config["expected_return_output"].as<string>(); 
+  string rate_out = _config["rate_function"].as<string>(); 
   cerr <<"printStratifiedPerp output to "<<stratified_out << endl;
   cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
   printStratifiedPerp(stratified_out);
   printStratifiedExpectedReturn(expected_return_out);
+   printRandomSampledRateFunction(rate_out);
   return 0;
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){

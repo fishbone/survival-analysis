@@ -14,11 +14,12 @@ double PiecewiseConstantModel::predictGofT(DataPoint & data, double t){
     integral_lambda += BIN_WIDTH * predictRateValue(data,((b+1)* BIN_WIDTH - eps));
   }
   integral_lambda += (t - bin * BIN_WIDTH) * predictRateValue(data, t);
-  return exp(-integral_lambda);
+  return exp(-integral_lambda) ;
 }
 double PiecewiseConstantModel::predictRateValue(DataPoint &data, double t){
   int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
-  return lambda_u[data.uid] + lambda + lambda_bin[bin];
+  //return lambda_u[data.uid] + lambda + lambda_bin[bin];
+  return lambda_bin[bin];
 }
 void PiecewiseConstantModel::initParams(){                                              
 
@@ -27,9 +28,11 @@ void PiecewiseConstantModel::initParams(){
   lr_lambda_u = _config["lr_lambda_u"].as<double>();              
   momentum  = _config["momentum"].as<double>();                   
   max_iter  = _config["max_iter"].as<int>();
+  smooth_wd = _config["smooth_regularization"].as<double>();
   cerr <<"=====lr_lambda = "<<lr_lambda<<endl                                      
     <<"=====lr_lambda_u= "<<lr_lambda_u<<endl                                      
-    <<"=====momentum = "<<momentum<<endl;
+    <<"=====momentum = "<<momentum<<endl
+    <<"=====smooth_wd = "<<smooth_wd<<endl;
   // weights for features                                                          
   //W  = SparseVector::rand_init(num_feature);                                     
 }  
@@ -42,7 +45,7 @@ double PiecewiseConstantModel::evalPerp(vector<DataPoint> & data){
   for(int i = 0 ; i < (int)data.size(); i++){                                   
     DataPoint &_point = data[i];                                                
     long uid = _point.uid;
-    assert(lambda_u.find(uid) != lambda_u.end()); 
+//    assert(lambda_u.find(uid) != lambda_u.end()); 
     double y = _point.y;
     int bin = min(NUM_BIN-1, (int)(y/(double)BIN_WIDTH));
     double _loglik = log(lambda_u[uid] + lambda + lambda_bin[bin])
@@ -59,8 +62,9 @@ double PiecewiseConstantModel::evalPerp(vector<DataPoint> & data){
     loglik += perUserLik[iter.first]/iter.second;
     sum_loglik += perUserLik[iter.first];
   }                                                                             
-  cout << "evaluated_user = "<< perUserCount.size()<<endl;
+  //cout << "evaluated_user = "<< perUserCount.size()<<endl;
   return exp(-sum_loglik/n_session);       
+ // return -loglik/perUserCount.size();
 }
 
 int PiecewiseConstantModel::train(const UserContainer *data){
@@ -75,13 +79,6 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   cerr <<"=======# train_sessions = "<<train_data.size()<<endl
     <<"=======# test_sessions = "<<test_data.size()<<endl;
 
-  for(auto iter = data->begin();                                                   
-      iter != data->end(); ++iter){   
-    long uid = iter->first;
-    lambda_u[uid] = EPS_LAMBDA;
-    d_lambda_u[uid] = 0.0;
-  }
-  lambda = d_lambda = 0;
   lambda_bin = vector<double>(NUM_BIN, EPS_LAMBDA);
   d_lambda_bin = vector<double>(NUM_BIN, 0.0);
 
@@ -107,32 +104,45 @@ int PiecewiseConstantModel::train(const UserContainer *data){
       double y = _point.y;
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
       double divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda);
-      d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
-      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);
+      double smooth_prev = 0.0;
+ //     d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
+//      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);
       for(int b = 0 ; b < bin ; b++){
-        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * scale * BIN_WIDTH;
+        if(b > 0){
+          smooth_prev = lambda_bin[b-1];
+        } else {
+          smooth_prev = 0.0;
+        }
+        d_lambda_bin[b] = momentum * d_lambda_bin[b] - lr_lambda * scale * (BIN_WIDTH + smooth_wd * smooth_prev);
         lambda_bin[b] += d_lambda_bin[b];
         lambda_bin[b] = max(lambda_bin[b], EPS_LAMBDA);
       }
+      if(bin > 0){
+          smooth_prev = lambda_bin[bin-1];
+      } else {
+          smooth_prev = 0.0;
+      }
       d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
-        - lr_lambda * scale *  ((y - bin*BIN_WIDTH) - divider);
+        - lr_lambda * scale *  ((y - bin*BIN_WIDTH) - divider + smooth_wd * smooth_prev);
 
       lambda_bin[bin] += d_lambda_bin[bin];
       lambda_bin[bin] = max(lambda_bin[bin], EPS_LAMBDA); 
-      lambda += d_lambda;
-      lambda_u[uid] += d_lambda_u[uid];
-      lambda = max(lambda, EPS_LAMBDA);
-      lambda_u[uid] = max(lambda_u[uid], EPS_LAMBDA);
+//      lambda += d_lambda;
+//      lambda_u[uid] += d_lambda_u[uid];
+//      lambda = max(lambda, EPS_LAMBDA);
+//      lambda_u[uid] = max(lambda_u[uid], EPS_LAMBDA);
     }
   }
 
   cerr <<"finished training "<< string(modelName()) << endl;
   string stratified_out = _config["stratified_output"].as<string>();
   string expected_return_out = _config["expected_return_output"].as<string>();
+  string rate_out = _config["rate_function"].as<string>(); 
   cerr <<"printStratifiedPerp ------" << stratified_out <<endl;
   cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
   printStratifiedPerp(stratified_out); 
   printStratifiedExpectedReturn(expected_return_out);
+   printRandomSampledRateFunction(rate_out); 
   return 0;
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){

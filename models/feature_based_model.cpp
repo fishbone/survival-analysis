@@ -6,16 +6,36 @@
 #include <iostream>
 using namespace std;
 double FeatureBasedModel::predictGofT(DataPoint & data, double t){
-  return 0.0;
+  int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
+  long uid = data.uid;
+  int s_id = data.s_id;
+  double eps = 1e-8; 
+  double integral_lambda = t * (lambda_u[uid] + lambda);
+  for(int b = 0 ; b < bin ; b++){ 
+    integral_lambda += BIN_WIDTH * lambda_bin[b];    
+  }                                  
+  integral_lambda += (t - bin * BIN_WIDTH) * lambda_bin[bin];
+  SparseVector int_x = this->ctrFeature->getIntegralFeatureAtTime(uid, s_id, data.prev_end + t);;
+  integral_lambda += SparseVector::dotProduct(W,int_x);
+  return exp(-integral_lambda); 
 }
 double FeatureBasedModel::predictRateValue(DataPoint & data, double t){
-  return 0.0;
+  long uid = data.uid;
+  int s_id = data.s_id;
+  int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
+  double _hours = data.prev_end + t;
+//  cerr <<"predictRateValue data.prev_end = "<<data.prev_end <<" t = "<< t 
+//    <<" s_id = "<<s_id<<endl;
+  SparseVector x = this->ctrFeature->getFeatureAtTime(uid, s_id, _hours);
+  return lambda_u[uid] + lambda + lambda_bin[bin]+ SparseVector::dotProduct(W,x);
 }
 void FeatureBasedModel::initParams(){                                              
 
   // feature-based parameters
   string _type = _config["feature_based"]["feature_type"].as<string>();
-  if(_type == "HAWKES_FEATURE"){
+  if (_type == "NO_FEATURE"){
+    feature_type = NO_FEATURE;
+  }else if(_type == "HAWKES_FEATURE"){
     feature_type = HAWKES_FEATURE;
   } else if(_type == "AUX_FEATURE"){
     feature_type = AUX_FEATURE;
@@ -71,13 +91,15 @@ double FeatureBasedModel::evalPerp(vector<DataPoint> & data){
   cout << "evaluated_user = "<< perUserCount.size()<<endl;
   //  cerr <<"=========Avg Perp = "<<exp(-sum_loglik/n_session);
   //  cerr <<"=========User-Avg Perp = "<<exp(-loglik/(double)perUserCount.size());
-  //return exp(-loglik/(double)perUserCount.size());                              
+  //return -loglik/(double)perUserCount.size(); 
   return exp(-sum_loglik/n_session);       
 }
 
 int FeatureBasedModel::train(const UserContainer *data){
   initParams();
-  if(feature_type == AUX_FEATURE){
+  if(feature_type == NO_FEATURE){
+    cerr <<"building no_feature only..."<<endl;
+  }else if(feature_type == AUX_FEATURE){
     cerr <<"building aux_feature only..."<<endl;
   } else if(feature_type == HAWKES_FEATURE) {
     cerr <<"building hawkes_feature only..."<<endl;
@@ -87,15 +109,16 @@ int FeatureBasedModel::train(const UserContainer *data){
     cerr <<"specified type "<< feature_type <<" not valid..."<<endl;
     assert(false);
   }
-  ConstructFeatureModel ctrFeature(feature_type);
-  ctrFeature.setData(_train_data, _test_data);
+  ctrFeature = new ConstructFeatureModel(feature_type);
+  ctrFeature->setData(_train_data, _test_data);
   assert(_train_data != nullptr);                                                  
   assert(_test_data != nullptr);
-  ctrFeature.train(_train_data);                                                   
-  train_data = ctrFeature.getTrainSet();
-  test_data = ctrFeature.getTestSet();
+  ctrFeature->train(_train_data);                                                   
+  train_data = ctrFeature->getTrainSet();
+  test_data = ctrFeature->getTestSet();
   cerr <<"=======# train_sessions = "<<train_data.size()<<endl
-    <<"=======# test_sessions = "<<test_data.size()<<endl;
+    <<"=======# test_sessions = "<<test_data.size()<<endl
+    <<"====== feature dimension = " << getNumberOfFeature()<<endl;
 
   for(auto iter = data->begin();                                                   
       iter != data->end(); ++iter){   
@@ -160,8 +183,13 @@ int FeatureBasedModel::train(const UserContainer *data){
 
 
   cerr <<"finished training "<< string(modelName())<<endl;
-  string stratified_out = _config["stratified_output"].as<string>();            
-  printStratifiedPerp(stratified_out); 
+  string stratified_out = _config["stratified_output"].as<string>();
+  string expected_return_out = _config["expected_return_output"].as<string>();
+  string rate_out = _config["rate_function"].as<string>();
+
+  printStratifiedPerp(stratified_out);
+  printStratifiedExpectedReturn(expected_return_out);
+  printRandomSampledRateFunction(rate_out); 
   // evalTrainPerp(data);
   return 0;
 }

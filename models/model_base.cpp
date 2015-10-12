@@ -2,86 +2,151 @@
 #include "model_test.h"
 #include "eval_loglik.h"
 #include "global_constant_model.h"
+#include "adhoc_statistics_model.h"
 #include "construct_feature_model.h"
 #include "user_constant_model.h"
 #include "piecewise_constant_model.h"
 #include "feature_based_model.h"
+#include <boost/date_time/gregorian/gregorian.hpp>
+#include <boost/date_time/gregorian/gregorian_types.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp> 
 #include <utility>
 #include <string>
 #include <fstream>
-jsoncons::json ModelBase::_config;
+using namespace boost;
+using namespace boost::posix_time;
 using namespace std;
-void ModelBase::printStratifiedExpectedReturn(std::string fname){
-  vector<pair<double, double>> segments;                                           
-  int n_segments =  _config["segments"]["n_segments"].as<int>();                   
-  for(int i = 1 ; i <= n_segments ; i++){                                           
-    double s = _config["segments"]["s" + to_string(i)].as<double>();       
-    double e = _config["segments"]["e" + to_string(i)].as<double>();       
-    segments.push_back(make_pair(s,e));                                            
-  }
+jsoncons::json ModelBase::_config;
+void ModelBase::printExpectedReturnUser(string fname){
+  cerr <<"printExpectedReturnUser..."<<endl;
+
+  ofstream fout(fname);
+
+}
+void ModelBase::printRandomSampledRateFunction(string fname){
+  cerr <<"printRandomSampledRateFunction..."<<endl;
   ofstream fout(fname);
   assert(train_data.size() > 0); 
   assert(test_data.size() > 0); 
   unordered_map<long, int> userCount;                                              
   vector<pair<int, double> > countPerp;                                            
-  map<long, vector<DataPoint> > userSession;                             
+  map<long, vector<DataPoint> > userSession;
+  map<int, int> hist_session_user;
   unordered_map<long, int> userToBin;
   vector<pair<int, long>> countUid;
-  // count the # sessions for each user in training data                           
-  for(auto data : train_data){                                                     
+  // count the # sessions for each user in testing data                           
+  for(auto data : test_data){
     userCount[data.uid] ++;                                               
   }
   for(auto iter = userCount.begin(); iter != userCount.end(); ++ iter){
+    hist_session_user[iter->second]++;
     countUid.push_back(make_pair(iter->second, iter->first));
   }
   // sort based on frequency default cmp for pair is by first
   sort(countUid.begin(), countUid.end());
+  int num_session_in_bin = test_data.size()/20.0;
+  int remain = num_session_in_bin;
   int n_user = countUid.size();
+  int bin = 0;
   for(int i = 0 ; i < (int)countUid.size() ; i++){
-    userToBin[countUid[i].second] = 0;
+    userToBin[countUid[i].second] = bin;
+    remain -= countUid[i].first;
+    if(remain < 0){
+      remain = num_session_in_bin;
+      bin++;
+    }
   }
+
   for(auto data : test_data){
     userSession[userToBin[data.uid]].push_back(data);
   }
-  fout <<"segments:";
-  for(auto p : segments){ 
-    double start = p.first;
-    double end = p.second;
-    fout << "\t"<<start<<"-"<<end;
-  }
-  fout << endl;
+
   for(auto iter = userSession.begin(); iter != userSession.end(); ++ iter){
-    fout << iter->first;
-    for(auto p : segments){
-      double start = p.first;
-      double end = p.second;
-      int countReturn = 0;
-      int countNotReturn = 0;
-      double expectedReturn =0.0;
-      assert(end > start); // end time should > start time of segment
-      for(int i = 0 ; i < iter->second.size() ; i++){
-        DataPoint &data =  iter->second[i];
-        double t = data.y;
-        if(t <= end && t > start){
-          countReturn++;
-        } else {
-          countNotReturn ++;
+    int plot = 0;
+    for(int i = 0 ; i < iter->second.size() ; i++){
+      // find a instance whose return time < 24 (just for good plot)
+      double y = iter->second[i].y;
+      if(y < 24){
+
+        fout <<y;
+
+        for(double t = 0.1 ; t <= 25 ; t += 0.05){
+          fout << " "<< t <<" "<<predictRateValue(iter->second[i],t);
         }
-        double GofStart = predictGofT(data, start);
-        double GofEnd = predictGofT(data, end);
-        double probReturn = GofStart - GofEnd;
-        expectedReturn += probReturn;
+        fout << endl;
+        plot++;
       }
-      cerr <<start<<"-"<<end
-           <<"\tcountNotReturn = " << countNotReturn
-           <<"\tcountReturn = "<<countReturn
-           <<"\texpected return = "<<expectedReturn<<endl;
-      fout << "\t" << (expectedReturn - countReturn)/(double)countReturn;
+      if(plot > 20)break;
     }
-    fout << endl;
+  } 
+
+
+}
+void ModelBase::printStratifiedExpectedReturn(std::string fname){
+  cerr <<"printStratifiedExpectedReturn..."<<endl;
+  ofstream fout(fname);
+  vector<pair<string, string>> segments;                                           
+  assert(train_data.size() > 0);
+  assert(test_data.size() > 0);
+  int n_segments =  _config["segments"]["n_segments"].as<int>();                   
+  for(int i = 1 ; i <= n_segments ; i++){                                           
+    string s = _config["segments"]["s" + to_string(i)].as<string>();       
+    string e = _config["segments"]["e" + to_string(i)].as<string>();       
+    segments.push_back(make_pair(s,e));
+  }
+  unordered_map<long, vector<DataPoint>> uidData;
+  for(auto data : train_data){
+    uidData[data.uid].push_back(data);
+  }
+  for(auto data : test_data){
+    uidData[data.uid].push_back(data);
+  }
+  for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
+    sort(iter->second.begin(), iter->second.end());
+  }
+  ptime _unix_start(boost::gregorian::date(1970,1,1)); 
+  for(auto p : segments){
+    ptime p1(time_from_string(p.first));
+    ptime p2(time_from_string(p.second));
+    double start_hours = (p1 - _unix_start).total_seconds()/3600.00;
+    double end_hours = (p2 - _unix_start).total_seconds()/3600.00;
+    double expected = 0;
+    int truth = 0;
+    int notReturn =0;
+    for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
+      int found = -1;
+      for(int j = 0 ; j < iter->second.size() ; j++){
+        if(iter->second[j].start > start_hours){
+          if(iter->second[j].start < end_hours){
+            truth ++;
+          }else {
+            notReturn ++;
+          }
+          break;
+        }
+        found = j;
+      }
+      if(found == iter->second.size() - 1){
+        notReturn ++;
+        continue;
+      }
+      if(found != -1){
+        double prev_end = iter->second[found].end;
+        DataPoint data;
+        data.uid = iter->first;
+        data.s_id = found + 1;
+        data.prev_end = prev_end;
+        double GofEnd = predictGofT(data, end_hours - prev_end); 
+        double GofStart = predictGofT(data, start_hours - prev_end); 
+        expected += (1 - GofEnd) - (1 - GofStart);
+      }
+    }
+    cerr <<p.first<<" - "<<p.second<<endl;
+    cerr <<"expected active users = " <<expected <<" true active users = " << truth<<endl; 
   }
 }
 void ModelBase::printStratifiedPerp(std::string fname){
+  cerr <<"printStratifiedPerp..."<<endl;
   //stratify by frequency of use in training data
   // 20 bins 0~5%, 5~10%,...,95~100% of heavy users
   ofstream fout(fname);
@@ -89,29 +154,40 @@ void ModelBase::printStratifiedPerp(std::string fname){
   assert(test_data.size() > 0); 
   unordered_map<long, int> userCount;                                              
   vector<pair<int, double> > countPerp;                                            
-  unordered_map<long, vector<DataPoint> > userSession;                             
+  map<long, vector<DataPoint> > userSession;
+  map<int, int> hist_session_user;
   unordered_map<long, int> userToBin;
   vector<pair<int, long>> countUid;
-  // count the # sessions for each user in training data                           
-  for(auto data : train_data){                                                     
+  // count the # sessions for each user in testing data                           
+  for(auto data : test_data){
     userCount[data.uid] ++;                                               
   }
   for(auto iter = userCount.begin(); iter != userCount.end(); ++ iter){
+    hist_session_user[iter->second]++;
     countUid.push_back(make_pair(iter->second, iter->first));
   }
   // sort based on frequency default cmp for pair is by first
   sort(countUid.begin(), countUid.end());
+  int num_session_in_bin = test_data.size()/20.0;
+  int remain = num_session_in_bin;
   int n_user = countUid.size();
+  int bin = 0;
   for(int i = 0 ; i < (int)countUid.size() ; i++){
-    userToBin[countUid[i].second] = i/(n_user / 20.0);
+    userToBin[countUid[i].second] = bin;
+    remain -= countUid[i].first;
+    if(remain < 0){
+      remain = num_session_in_bin;
+      bin++;
+    }
   }
+
   for(auto data : test_data){
     userSession[userToBin[data.uid]].push_back(data);
   }
   for(auto iter = userSession.begin(); iter != userSession.end(); ++ iter){        
     double avgPerp =  evalPerp(iter->second);
     fout << iter->first <<"\t" << avgPerp<<endl;
-  }                                                                                
+  } 
 }
 
 ModelBase *ModelBase::makeModel(const char *model_name){
@@ -126,6 +202,8 @@ ModelBase *ModelBase::makeModel(const char *model_name){
     return new PiecewiseConstantModel();
   }else if(name == "feature_based_model"){
     return new FeatureBasedModel();
+  }else if (name == "adhoc_statistics_model"){
+    return new AdhocStatisticsModel();
   }else {
     cerr <<"Model with name = "<<name  <<" not makable.. abort !"<<endl;
     exit(1);

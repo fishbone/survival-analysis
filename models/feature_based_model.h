@@ -21,6 +21,7 @@ class FeatureBasedModel : public ModelBase{
     typedef double Lambda;
     typedef std::vector<double> LambdaBin;
   private:
+    ConstructFeatureModel * ctrFeature;
     int max_iter, feature_type;
     const UserContainer *_user_train;
     double lr_lambda, lr_lambda_u, momentum, lr_w;

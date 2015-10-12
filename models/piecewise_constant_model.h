@@ -15,7 +15,7 @@ class PiecewiseConstantModel : public ModelBase{
     const char *modelName();
     PredictRes predict(const User &user);
     double predictGofT(DataPoint &, double);
-    double predictRateValue(DataPoint &, double); 
+    double predictRateValue(DataPoint &, double);
     double evalPerp(std::vector<DataPoint> &);
     void initParams();
     double evalTrainPerp(const UserContainer *);
@@ -25,7 +25,7 @@ class PiecewiseConstantModel : public ModelBase{
   private:
     int max_iter;
     const UserContainer *_user_train;
-    double lr_lambda, lr_lambda_u, momentum;
+    double lr_lambda, lr_lambda_u, momentum, smooth_wd;
     LambdaU lambda_u, d_lambda_u;
     Lambda lambda, d_lambda;
     LambdaBin lambda_bin, d_lambda_bin;
