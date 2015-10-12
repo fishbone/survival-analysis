@@ -37,9 +37,11 @@ void ConstructFeatureModel::initParams(){
   num_feature  = _config["hawkes"]["history_size"].as<int>();
 
   // kernel functions
-  int _exp = -2;
-  for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){                           
+  int _exp = 0;
+  for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){
     kernels.push_back(make_pair(rbf, pow(2, _exp - 1)));
+    kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));
+//    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_morning, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_noon, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_night, pow(2, _exp - 1)));
@@ -47,12 +49,16 @@ void ConstructFeatureModel::initParams(){
     getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_24h"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
+//    kernel_name.push_back("rbf_7d"+ std::to_string(i));
+//    getFeatureOffset(kernel_name.back());
+
     kernel_name.push_back("rbf_morning"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_noon"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_night"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
+    
     _exp++;                                                                        
   }
   cerr <<"using what kernels ? :" <<endl;

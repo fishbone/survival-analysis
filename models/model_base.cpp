@@ -114,12 +114,16 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
     prob.push_back(1 - sum_p);
     discrete_distribution<int> distribution(prob.begin(), prob.end());
     int sampled = distribution(generator);
+    if(i % 50000 == 0 ){
+      cerr << "acc now = "<<correct/total<<endl;
+    }
+    /*
     cerr <<"true = " << _data.y<<" sampled = " << sampled<<" ";
     for(auto s : prob){
       cerr <<s <<" ";
     }
     
-    cerr << "acc now = "<<correct/total<<endl;
+    */
     if (sampled == prob.size() - 1){
       if(_data.y > segments.back()){
         correct ++;

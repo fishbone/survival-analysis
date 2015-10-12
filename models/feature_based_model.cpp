@@ -124,7 +124,7 @@ int FeatureBasedModel::train(const UserContainer *data){
     lambda_u[uid] = EPS_LAMBDA;
     d_lambda_u[uid] = 0.0;
   }
-  lambda = d_lambda = EPS_LAMBDA;
+  lambda = d_lambda = 0.0;
   lambda_bin = vector<double>(NUM_BIN, EPS_LAMBDA);
   d_lambda_bin = vector<double>(NUM_BIN, 0.0);
 
