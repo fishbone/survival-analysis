@@ -1,4 +1,5 @@
 #include "model_base.h"
+#include <random>
 #include "model_test.h"
 #include "eval_loglik.h"
 #include "global_constant_model.h"
@@ -67,9 +68,7 @@ void ModelBase::printRandomSampledRateFunction(string fname){
       // find a instance whose return time < 24 (just for good plot)
       double y = iter->second[i].y;
       if(y < 24){
-
         fout <<y;
-
         for(double t = 0.1 ; t <= 25 ; t += 0.05){
           fout << " "<< t <<" "<<predictRateValue(iter->second[i],t);
         }
@@ -85,68 +84,57 @@ void ModelBase::printRandomSampledRateFunction(string fname){
 void ModelBase::printStratifiedExpectedReturn(std::string fname){
   cerr <<"printStratifiedExpectedReturn..."<<endl;
   ofstream fout(fname);
-  vector<pair<string, string>> segments;                                           
+  vector<double> segments;                                           
   assert(train_data.size() > 0);
   assert(test_data.size() > 0);
   int n_segments =  _config["segments"]["n_segments"].as<int>();                   
   for(int i = 1 ; i <= n_segments ; i++){                                           
-    string s = _config["segments"]["s" + to_string(i)].as<string>();       
-    string e = _config["segments"]["e" + to_string(i)].as<string>();       
-    segments.push_back(make_pair(s,e));
+    double s = _config["segments"]["s" + to_string(i)].as<double>();       
+    segments.push_back(s);
   }
-  unordered_map<long, vector<DataPoint>> uidData;
-  for(auto data : train_data){
-    uidData[data.uid].push_back(data);
-  }
-  for(auto data : test_data){
-    uidData[data.uid].push_back(data);
-  }
-  for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
-    sort(iter->second.begin(), iter->second.end());
-  }
-  ptime _unix_start(boost::gregorian::date(1970,1,1)); 
-  for(auto p : segments){
-    ptime p1(time_from_string(p.first));
-    ptime p2(time_from_string(p.second));
-    double start_hours = (p1 - _unix_start).total_seconds()/3600.00;
-    double end_hours = (p2 - _unix_start).total_seconds()/3600.00;
-    double expected = 0;
-    int truth = 0;
-    int notReturn =0;
-    for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
-      int found = -1;
-      for(int j = 0 ; j < iter->second.size() ; j++){
-        if(iter->second[j].start > start_hours){
-          if(iter->second[j].start < end_hours){
-            truth ++;
-          }else {
-            notReturn ++;
-          }
-          break;
-        }
-        found = j;
+  
+  double correct = 0.0;
+  double total =0.0;
+  double all_zero =0.0;
+  default_random_engine generator;
+  for(int i = 0 ; i < test_data.size() ; i++){
+    DataPoint & _data = test_data[i];
+    vector<double> prob;
+    double G= 0.0;
+    double sum_p = 0.0;
+    total ++;
+    for(int j = 0 ; j < segments.size() ; j++){
+      double s = segments[j];
+      G = predictGofT(_data, segments[j]);
+      double P = 1 - G;
+      prob.push_back(P - sum_p);
+      sum_p += P -sum_p;
+//      double e = p.second;
+    }
+    prob.push_back(1 - sum_p);
+    discrete_distribution<int> distribution(prob.begin(), prob.end());
+    int sampled = distribution(generator);
+    cerr <<"true = " << _data.y<<" sampled = " << sampled<<" ";
+    for(auto s : prob){
+      cerr <<s <<" ";
+    }
+    
+    cerr << "acc now = "<<correct/total<<endl;
+    if (sampled == prob.size() - 1){
+      if(_data.y > segments.back()){
+        correct ++;
       }
-      if(found == iter->second.size() - 1){
-        notReturn ++;
-        continue;
+    }else if (sampled == 0){
+      if(_data.y < segments[0]){
+        correct ++;
       }
-      if(found != -1){
-        double prev_end = iter->second[found].end;
-        DataPoint data;
-        data.uid = iter->first;
-        data.s_id = found + 1;
-        data.prev_end = prev_end;
-        double GofEnd = predictGofT(data, end_hours - prev_end); 
-        double GofStart = predictGofT(data, start_hours - prev_end); 
-        expected += (1 - GofEnd) - (1 - GofStart);
-        bool yes = iter->second[found+1].start < end_hours;
-         
-        cerr <<start_hours<< " " <<end_hours<<" "<< iter->second[found].start<<" "<<iter->second[found+1].start<< " "<<start_hours - prev_end<<" true = "<<yes<<" prob = "<<GofStart- GofEnd<<endl;
+    } else {
+      if(_data.y < segments[sampled] && _data.y > segments[sampled-1]){
+        correct ++;
       }
     }
-    cerr <<p.first<<" - "<<p.second<<endl;
-    cerr <<"expected active users = " <<expected <<" true active users = " << truth<<endl; 
   }
+  cerr << "Accuracy of Prediction = " << correct / test_data.size()<<endl;
 }
 void ModelBase::printStratifiedPerp(std::string fname){
   cerr <<"printStratifiedPerp..."<<endl;

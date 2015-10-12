@@ -24,8 +24,6 @@ double FeatureBasedModel::predictRateValue(DataPoint & data, double t){
   int s_id = data.s_id;
   int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
   double _hours = data.prev_end + t;
-//  cerr <<"predictRateValue data.prev_end = "<<data.prev_end <<" t = "<< t 
-//    <<" s_id = "<<s_id<<endl;
   SparseVector x = this->ctrFeature->getFeatureAtTime(uid, s_id, _hours);
   return lambda_u[uid] + lambda + lambda_bin[bin]+ SparseVector::dotProduct(W,x);
 }
@@ -126,7 +124,7 @@ int FeatureBasedModel::train(const UserContainer *data){
     lambda_u[uid] = EPS_LAMBDA;
     d_lambda_u[uid] = 0.0;
   }
-  lambda = d_lambda = 0;
+  lambda = d_lambda = EPS_LAMBDA;
   lambda_bin = vector<double>(NUM_BIN, EPS_LAMBDA);
   d_lambda_bin = vector<double>(NUM_BIN, 0.0);
 
@@ -136,13 +134,13 @@ int FeatureBasedModel::train(const UserContainer *data){
     if(iter % 10 == 0){
       scale *= 0.95;
     }
-    cerr <<"Iter: "<<iter+1<<" ------loglik(train_data) = "<<evalPerp(train_data)<<endl;
+    cerr <<"Iter: "<<iter<<" ------loglik(train_data) = "<<evalPerp(train_data)<<endl;
     double test_log_lik = evalPerp(test_data);                                                                   
     if(test_log_lik < best_test){                                               
       best_test = test_log_lik;                                                 
     }                                                                           
-    cerr <<"Iter: "<<iter+1<<" ------loglik(test_data)  = "<<test_log_lik<<endl;
-    cerr <<"Iter: "<<iter+1<<" ------best test loglik   = "<<best_test<<endl;  
+    cerr <<"Iter: "<<iter<<" ------loglik(test_data)  = "<<test_log_lik<<endl;
+    cerr <<"Iter: "<<iter<<" ------best test loglik   = "<<best_test<<endl;  
     for(int i = 0 ; i < (int)train_data.size() ; i++){
       if(i % 200000 == 0){
         cout <<"Training with SGD: " << i<<"/"<<train_data.size()<<endl;

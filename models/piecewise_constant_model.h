@@ -20,7 +20,6 @@ class PiecewiseConstantModel : public ModelBase{
     void initParams();
     double evalTrainPerp(const UserContainer *);
     typedef std::unordered_map<long, double> LambdaU;
-    typedef std::unordered_map<long, vector<double> > LambdaU_Bin;
     typedef double Lambda;
     typedef std::vector<double> LambdaBin;
   private:
@@ -28,7 +27,6 @@ class PiecewiseConstantModel : public ModelBase{
     const UserContainer *_user_train;
     double lr_lambda, lr_lambda_u, momentum, smooth_wd;
     LambdaU lambda_u, d_lambda_u;
-    LambdaU_Bin lambda_u_bin, d_lambda_u_bin;
     Lambda lambda, d_lambda;
     LambdaBin lambda_bin, d_lambda_bin;
 };
