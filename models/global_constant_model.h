@@ -10,11 +10,15 @@ class GlobalConstantModel : public ModelBase{
   public:
     int train(const UserContainer *data);
     const char *modelName();
+    double predictRateValue(DataPoint &, double);
+    double predictGofT(DataPoint &, double);
     PredictRes predict(const User &user);
-    double evalTrainPerp(const UserContainer *data) ; 
+    double evalPerp(std::vector<DataPoint> & );
     double lambda;
   private:
     //keep an access to training data because we need this during testing
     const UserContainer *_user_train;
+    std::vector<DataPoint> train_data;
+    std::vector<DataPoint> test_data;
 };
 #endif

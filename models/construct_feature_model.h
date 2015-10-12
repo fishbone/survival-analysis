@@ -7,21 +7,6 @@
 #include <iostream>
 #include "feature.h"
 #include "util.h"
-struct DataPoint{
-  long uid; // start end in unix time (seconds)
-  SparseVector x;
-  SparseVector integral_x;
-  double start, end, prev_end, y;
-  int bin, s_id;
-  DataPoint():uid(0),s_id(0),y(0),bin(-1),start(-1),end(0){}
-  bool operator < (const DataPoint& rhs) const
-  {
-    if(this->uid < rhs.uid) return true;
-    else if(this->uid > rhs.uid) return false;
-    return (this->start <= rhs.start);
-  }
-};
-
 class ConstructFeatureModel : public ModelBase{
 
   public:
@@ -32,6 +17,12 @@ class ConstructFeatureModel : public ModelBase{
 
     PredictRes predict(const User &user);
 
+    double predictRateValue(DataPoint & , double);
+
+    double predictGofT(DataPoint&, double);
+
+    double evalPerp(std::vector<DataPoint> & );
+
     ConstructFeatureModel(int _type = 0) : feature_type(_type){
       num_kernel = 0;                                                                                                             
       kernels = std::vector<std::pair<Kernels, double>>();                                       
@@ -40,6 +31,10 @@ class ConstructFeatureModel : public ModelBase{
     }
 
     void buildDataset();
+    
+    SparseVector getFeatureAtTime(long, int, double);
+    
+    SparseVector getIntegralFeatureAtTime(long, int, double);
 
     std::vector<DataPoint> & getTrainSet();
 
@@ -74,9 +69,7 @@ class ConstructFeatureModel : public ModelBase{
     std::vector<DataPoint> test_data;
 
     //getFeature in SparseFormat given (uid, session_id, time (in hours))
-    SparseVector getFeatureAtTime(long, int, double);
 
-    SparseVector getIntegralFeatureAtTime(long, int, double);
 
     std::vector<Feature> getHawkesFeatureAtTime(long, int, double );
 

@@ -181,7 +181,7 @@ int read_data(
         count += read_data_from_file(filename,
                                      data,
                                      stay_handle,
-                                     isIn(feature, 'r'));
+                                     isIn(feature, 'd'));
     }
     if(isIn(feature, 'p')){
         std::cerr<<"Reading profile data"<<std::endl;
@@ -209,7 +209,7 @@ int read_data(
             count += read_data_from_file(filename,
                                          data,
                                          app_handle,
-                                         isIn(feature, 'r'));
+                                         isIn(feature, 'a'));
         }
     }
     return count;

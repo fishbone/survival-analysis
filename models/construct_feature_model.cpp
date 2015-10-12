@@ -12,6 +12,23 @@
 #include <iostream>
 using namespace std;
 const static int LABEL_INDEX = 0;
+double ConstructFeatureModel::predictGofT(DataPoint & data, double t){
+  cerr <<"shouldn't call predictGofT for ConstructFeatureModel !!" << endl;
+  assert(false);
+  return 0.0;
+}
+double ConstructFeatureModel::predictRateValue(DataPoint & data, double t){
+  cerr <<"shouldn't call predictValueRate for ConstructFeatureModel !!" << endl;
+  assert(false);
+  return 0.0;
+}
+
+double ConstructFeatureModel::evalPerp(vector<DataPoint> & data){                    
+  cerr <<"global_constant_model not implemented evalPerp..." <<endl;               
+  assert(false);                                                                   
+  return -1.0;                                                                                                                                                              
+} 
+
 void ConstructFeatureModel::initParams(){
 
   // hawkes parameters
@@ -20,23 +37,37 @@ void ConstructFeatureModel::initParams(){
   num_feature  = _config["hawkes"]["history_size"].as<int>();
 
   // kernel functions
-  int _exp = 0;                                                                    
-  for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){                           
+  int _exp = 0;
+  for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){
     kernels.push_back(make_pair(rbf, pow(2, _exp - 1)));
-    kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));                       
-    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
-    kernel_name.push_back("rbf"+ std::to_string(pow(2, _exp -4)));
+    kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));
+//    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
+    kernels.push_back(make_pair(rbf_morning, pow(2, _exp - 1)));
+    kernels.push_back(make_pair(rbf_noon, pow(2, _exp - 1)));
+    kernels.push_back(make_pair(rbf_night, pow(2, _exp - 1)));
+    kernel_name.push_back("rbf"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
-    kernel_name.push_back("rbf_24h"+ std::to_string(pow(2, _exp - 4)));
+    kernel_name.push_back("rbf_24h"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
-    kernel_name.push_back("rbf_7d"+ std::to_string(pow(2, _exp - 4)));
+//    kernel_name.push_back("rbf_7d"+ std::to_string(i));
+//    getFeatureOffset(kernel_name.back());
+
+    kernel_name.push_back("rbf_morning"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
+    kernel_name.push_back("rbf_noon"+ std::to_string(i));
+    getFeatureOffset(kernel_name.back());
+    kernel_name.push_back("rbf_night"+ std::to_string(i));
+    getFeatureOffset(kernel_name.back());
+    
     _exp++;                                                                        
-  } 
+  }
+  cerr <<"using what kernels ? :" <<endl;
+  for(int i=0;i<kernel_name.size() ;i++) {
+    cerr << kernel_name[i]<<" ";
+  }
+  cerr << endl;
   num_kernel = (int)kernels.size();
 }
-
-
 //get feature in SparsesVector format for give (uid, session_id, _time)
 SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
     int s_id, double _hours){
@@ -88,21 +119,32 @@ vector<Feature> ConstructFeatureModel::getHawkesFeatureAtTime(long uid,
     int s_id, double _time){
 
   const UserContainer *data = _concat_data;
-  assert(data->find(uid) != data->end()); // uid not in training data !?
-  const vector<Session> &train_sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
+  assert(_train_data->find(uid) != _train_data->end()); // uid not in training data !?
+  const vector<Session> &sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   vector<Feature> vec;
   for(int k = 0 ; k < num_kernel ; k++){
     int count_history = 0;
     double kernelValue = 0.0;
-    for (int j = max(0, s_id - history_size); j < s_id ; j++){
-      count_history ++;
-      assert(train_sessions[j].start.hours() < _time);
-      kernelValue += evalKernel(kernels[k].first, kernels[k].second,
-          train_sessions[j].start.hours(), _time);
+    if(kernels[k].first == rbf || kernels[k].first == rbf_24h
+        || kernels[k].first == rbf_7d){
+
+      for (int j = max(0, s_id - history_size); j < s_id ; j++){
+        count_history ++;
+        if(sessions[j].start.hours() > _time + 1e-5){
+          cerr <<setprecision(12)<<"uid = "<<uid<<" sessions[" << j<<"].(start,end)= "
+            <<sessions[j].start.hours()<< sessions[j].end.hours()<<" _time = "<<_time<<"s_id = "
+            <<s_id<<" s[s_id].start = "<<sessions[s_id].start.hours()<<endl;
+        }
+        assert(sessions[j].start.hours() < _time + 1e-5);
+        kernelValue += evalKernel(kernels[k].first, kernels[k].second,
+            sessions[j].start.hours(), _time);
+      }
+      vec.push_back(Feature(getFeatureOffset(kernel_name[k]),kernelValue/(sqrt(count_history))));
+    }else {
+      double non_his = evalKernel(kernels[k].first, kernels[k].second, 0.0, _time);
+      vec.push_back(Feature(getFeatureOffset(kernel_name[k]), non_his) );
     }
-    vec.push_back(Feature(getFeatureOffset(kernel_name[k]),
-          kernelValue/(sqrt(count_history))));
-//          kernelValue/(double)count_history));
+    //kernelValue/(double)count_history));
   }
   return vec;
 }
@@ -143,21 +185,19 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
 
   const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(_hours >= 0);
-  //  return vector<Feature>();  
   assert(s_id > 0);
   assert(s_id < (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
-  //  int target_bin = min(NUM_BIN - 1,(int)((_hours - prev_end)/(double)BIN_WIDTH) );
+  assert(_hours >= prev_end);
   int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
   // copy session_feature and append day_feature
-  vector<Feature> auxFeature(sessions[s_id ].session_features);
+  vector<Feature> auxFeature(sessions[s_id - 1].session_features);
   auxFeature.insert(auxFeature.end(), 
       sessions[s_id - 1].day_features->begin(), sessions[s_id - 1].day_features->end());
 
   //since session_feature and day_feature are the same within the same
   //session, we just scale by a factor of target_bin to get the desired number
   for(int i = 0 ; i < (int)auxFeature.size(); i++){
-    //auxFeature[i].second *= (target_bin + 1);
     //aux feaure does not vary within this session, so integration
     //can be done exactly
     auxFeature[i].second *= (_hours - prev_end);
@@ -175,7 +215,6 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
 
   double prev_end = sessions[s_id - 1].end.hours();
   assert(_hours >= prev_end);
-  //int target_bin = min(NUM_BIN - 1, (int)((_hours - prev_end)/(double)BIN_WIDTH));
   int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
   // get the feature at bin 0 then for b = 1 : target_bin
   // add them add
@@ -211,20 +250,16 @@ void ConstructFeatureModel::buildVectorizedDataset(){
     all_uids.push_back(iter->first);
   }
   std::random_shuffle(all_uids.begin(), all_uids.end());
-#pragma omp parallel
   {
     int n_user = 0; 
     auto s = time(nullptr);
-#pragma omp for
+#pragma omp parallel for
     for(int i = 0 ; i < (int)all_uids.size(); ++i){
       n_user ++;
-#pragma omp critical
-      {
-        if(n_user % 500 == 0){
-          auto n = time(nullptr);
-          cerr <<"TID="<<omp_get_thread_num()<<" processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
-          s = n;
-        }
+      if(n_user % 500 == 0){
+        auto n = time(nullptr);
+        cerr <<"TID="<<omp_get_thread_num()<<" processed_user = "<<n_user<<"\tcostTime="<<(n-s)<<endl;
+        s = n;
       }
       long uid = all_uids[i];
       User &user = (*_concat_data)[uid];
@@ -234,6 +269,8 @@ void ConstructFeatureModel::buildVectorizedDataset(){
         double prev_end = all_sessions[j-1].end.hours();
         double start = all_sessions[j].start.hours();
         double end = all_sessions[j].end.hours();
+        assert(_train_data->find(uid) != _train_data->end()); // uid not in training data !?
+        assert(prev_end < start);
         //int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN - 1);
         int bin = (int)((start - prev_end)/(double)BIN_WIDTH);
         // ctr :(uid, s_id, y, bin, start, end)
@@ -254,6 +291,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
   }
   for(int i = 0 ; i < (int)all_uids.size(); ++i){
     long uid = all_uids[i];
+    //
     for(int j = 0 ; j < (int)tmpMap[uid].size() ; j++){
       if(isTestSet[uid][tmpMap[uid][j].s_id] == true){
         test_data.push_back(tmpMap[uid][j]);
@@ -276,9 +314,11 @@ void ConstructFeatureModel::buildDataset(){
     <<"as we need to iterate historical sessions "
     <<"for constructing hawkes features" <<endl;
   _concat_data = new UserContainer(*_train_data); // copy 
+  cerr <<"exclude user with less than 1 session in the training set !!! " <<endl;
   for(auto iter = _test_data->begin(); iter != _test_data->end(); ++iter){
     long uid = iter->first;
-    if(_concat_data->find(uid) == _concat_data->end()){
+    if(_concat_data->find(uid) == _concat_data->end()
+        || _concat_data->at(uid).get_sessions().size() < 1){
       continue;
     }
     isTestSet[uid] = unordered_map<int, bool>();

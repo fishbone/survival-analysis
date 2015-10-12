@@ -12,13 +12,16 @@ class FeatureBasedModel : public ModelBase{
     int train(const UserContainer *data);
     const char *modelName();
     PredictRes predict(const User &user);
-    double evalLoglik(std::vector<DataPoint> &);
+    double predictRateValue(DataPoint &, double);
+    double predictGofT(DataPoint &, double );
+    double evalPerp(std::vector<DataPoint> &);
     void initParams();
     double evalTrainPerp(const UserContainer *);
     typedef std::unordered_map<long, double> LambdaU;
     typedef double Lambda;
     typedef std::vector<double> LambdaBin;
   private:
+    ConstructFeatureModel * ctrFeature;
     int max_iter, feature_type;
     const UserContainer *_user_train;
     double lr_lambda, lr_lambda_u, momentum, lr_w;
