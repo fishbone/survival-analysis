@@ -41,7 +41,7 @@ void ConstructFeatureModel::initParams(){
   for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){
     kernels.push_back(make_pair(rbf, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));
-//    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
+    kernels.push_back(make_pair(rbf_7d, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_morning, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_noon, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_night, pow(2, _exp - 1)));
@@ -49,8 +49,8 @@ void ConstructFeatureModel::initParams(){
     getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_24h"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
-//    kernel_name.push_back("rbf_7d"+ std::to_string(i));
-//    getFeatureOffset(kernel_name.back());
+    kernel_name.push_back("rbf_7d"+ std::to_string(i));
+    getFeatureOffset(kernel_name.back());
 
     kernel_name.push_back("rbf_morning"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
@@ -63,7 +63,7 @@ void ConstructFeatureModel::initParams(){
   }
   cerr <<"using what kernels ? :" <<endl;
   for(int i=0;i<kernel_name.size() ;i++) {
-    cerr << kernel_name[i]<<" ";
+    cerr << kernel_name[i]<<"   ";
   }
   cerr << endl;
   num_kernel = (int)kernels.size();
@@ -186,7 +186,7 @@ vector<Feature> ConstructFeatureModel::getIntegralAuxFeatureAtTime(long uid,
   const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(_hours >= 0);
   assert(s_id > 0);
-  assert(s_id < (int)sessions.size());
+  assert(s_id <= (int)sessions.size());
   double prev_end = sessions[s_id - 1].end.hours();
   assert(_hours >= prev_end);
   int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
@@ -211,7 +211,7 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
   const UserContainer *data = _concat_data;
   const vector<Session> & sessions = (*const_cast<UserContainer*>(data))[uid].get_sessions();
   assert(s_id > 0);
-  assert(s_id < (int)sessions.size());
+  assert(s_id <= (int)sessions.size());
 
   double prev_end = sessions[s_id - 1].end.hours();
   assert(_hours >= prev_end);

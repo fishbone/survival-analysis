@@ -6,6 +6,10 @@
 #include <iostream>
 using namespace std;
 double FeatureBasedModel::predictGofT(DataPoint & data, double t){
+  if(t <= 0){
+    return 1.0;
+  }
+  assert(t >= 0);
   int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
   long uid = data.uid;
   int s_id = data.s_id;
@@ -186,8 +190,9 @@ int FeatureBasedModel::train(const UserContainer *data){
   string rate_out = _config["rate_function"].as<string>();
 
   printStratifiedPerp(stratified_out);
-  printStratifiedExpectedReturn(expected_return_out);
+  //printStratifiedExpectedReturn(expected_return_out);
   printRandomSampledRateFunction(rate_out); 
+  printExpectedReturnUser(expected_return_out);
   // evalTrainPerp(data);
   return 0;
 }

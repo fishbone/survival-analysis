@@ -60,6 +60,7 @@ class ModelBase {
     virtual void printStratifiedExpectedReturn(std::string);
 
     virtual void printExpectedReturnUser(std::string);
+    
 
   public:
     void batchPredict(const UserContainer *data,

@@ -18,12 +18,6 @@ using namespace boost;
 using namespace boost::posix_time;
 using namespace std;
 jsoncons::json ModelBase::_config;
-void ModelBase::printExpectedReturnUser(string fname){
-  cerr <<"printExpectedReturnUser..."<<endl;
-
-  ofstream fout(fname);
-
-}
 void ModelBase::printRandomSampledRateFunction(string fname){
   cerr <<"printRandomSampledRateFunction..."<<endl;
   ofstream fout(fname);
@@ -63,6 +57,7 @@ void ModelBase::printRandomSampledRateFunction(string fname){
   }
 
   for(auto iter = userSession.begin(); iter != userSession.end(); ++ iter){
+    sort(iter->second.begin(), iter->second.end());
     int plot = 0;
     for(int i = 0 ; i < iter->second.size() ; i++){
       // find a instance whose return time < 24 (just for good plot)
@@ -79,7 +74,70 @@ void ModelBase::printRandomSampledRateFunction(string fname){
     }
   } 
 
+}
 
+void ModelBase::printExpectedReturnUser(std::string fname){
+  ofstream fout(fname);
+  vector<pair<string, string>> segments;                                           
+  assert(train_data.size() > 0);
+  assert(test_data.size() > 0);
+  int n_segments =  _config["segments"]["n_segments"].as<int>();                   
+  for(int i = 1 ; i <= n_segments ; i++){                                           
+    string s = _config["segments"]["s" + to_string(i)].as<string>();       
+    string e = _config["segments"]["e" + to_string(i)].as<string>();       
+    segments.push_back(make_pair(s,e));
+  }
+  unordered_map<long, vector<DataPoint>> uidData;
+  for(auto data : train_data){
+    uidData[data.uid].push_back(data);
+  }
+  for(auto data : test_data){
+    uidData[data.uid].push_back(data);
+  }
+  for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
+    sort(iter->second.begin(), iter->second.end());
+  }
+  ptime _unix_start(boost::gregorian::date(1970,1,1)); 
+  for(auto p : segments){
+    ptime p1(time_from_string(p.first));
+    ptime p2(time_from_string(p.second));
+    double start_hours = (p1 - _unix_start).total_seconds()/3600.00;
+    double end_hours = (p2 - _unix_start).total_seconds()/3600.00;
+    double expected = 0;
+    int truth = 0;
+    int notReturn =0;
+    for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
+      int found = -1;
+      for(int j = 0 ; j < iter->second.size() ; j++){
+        if(iter->second[j].start > start_hours 
+            && iter->second[j].start < end_hours){
+          if(j > 0 && iter->second[j-1].end < start_hours){
+            truth ++;
+          }
+          break;
+        }
+      }
+      for(int j = 0 ; j < iter->second.size() ; j++){
+        if(iter->second[j].end > start_hours){
+          break;
+        }
+        found = j;
+      }
+        if(found != -1){
+          double prev_end = iter->second[found].end;
+          //DataPoint data(iter->second[found+1]);
+          DataPoint data;
+          data.uid = iter->first;
+          data.s_id = iter->second[found].s_id + 1;
+          data.prev_end = prev_end;
+          double GofEnd = predictGofT(data, end_hours - data.prev_end); 
+          double GofStart = predictGofT(data, start_hours - data.prev_end); 
+          expected += (1 - GofEnd) - (1 - GofStart);
+        }
+    }
+      cerr <<p.first<<" - "<<p.second<<endl;
+      cerr <<"expected active users = " <<expected <<" true active users = " << truth<<endl; 
+  }
 }
 void ModelBase::printStratifiedExpectedReturn(std::string fname){
   cerr <<"printStratifiedExpectedReturn..."<<endl;
@@ -92,11 +150,12 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
     double s = _config["segments"]["s" + to_string(i)].as<double>();       
     segments.push_back(s);
   }
-  
+
   double correct = 0.0;
   double total =0.0;
   double all_zero =0.0;
   default_random_engine generator;
+#pragma omp parallel for reduction(+:correct) reduction(+:total)
   for(int i = 0 ; i < test_data.size() ; i++){
     DataPoint & _data = test_data[i];
     vector<double> prob;
@@ -109,7 +168,7 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
       double P = 1 - G;
       prob.push_back(P - sum_p);
       sum_p += P -sum_p;
-//      double e = p.second;
+      //      double e = p.second;
     }
     prob.push_back(1 - sum_p);
     discrete_distribution<int> distribution(prob.begin(), prob.end());
@@ -117,13 +176,6 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
     if(i % 50000 == 0 ){
       cerr << "acc now = "<<correct/total<<endl;
     }
-    /*
-    cerr <<"true = " << _data.y<<" sampled = " << sampled<<" ";
-    for(auto s : prob){
-      cerr <<s <<" ";
-    }
-    
-    */
     if (sampled == prob.size() - 1){
       if(_data.y > segments.back()){
         correct ++;
@@ -139,6 +191,7 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
     }
   }
   cerr << "Accuracy of Prediction = " << correct / test_data.size()<<endl;
+
 }
 void ModelBase::printStratifiedPerp(std::string fname){
   cerr <<"printStratifiedPerp..."<<endl;

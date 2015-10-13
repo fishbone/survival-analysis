@@ -138,8 +138,9 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   cerr <<"printStratifiedPerp ------" << stratified_out <<endl;
   cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
   printStratifiedPerp(stratified_out); 
-  printStratifiedExpectedReturn(expected_return_out);
    printRandomSampledRateFunction(rate_out); 
+  printExpectedReturnUser(expected_return_out);
+  //printStratifiedExpectedReturn(expected_return_out);
   return 0;
 }
 ModelBase::PredictRes PiecewiseConstantModel::predict(const User &user){

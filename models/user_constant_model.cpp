@@ -5,9 +5,15 @@
 #include <iostream>
 using namespace std;
 double UserConstantModel::predictGofT(DataPoint &  data, double t){
+  if(t <= 0){
+    return 1.0;
+  }
   return exp(-t *(lambda_u[data.uid] + lambda));
 }
 double UserConstantModel::predictRateValue(DataPoint& data, double t){
+  if(t <= 0){
+    return 0.0;
+  }
   return lambda_u[data.uid] + lambda; 
 }
 void UserConstantModel::initParams(){                                              
@@ -102,8 +108,9 @@ int UserConstantModel::train(const UserContainer *data){
   cerr <<"printStratifiedPerp output to "<<stratified_out << endl;
   cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
   printStratifiedPerp(stratified_out);
-  printStratifiedExpectedReturn(expected_return_out);
-   printRandomSampledRateFunction(rate_out);
+  printRandomSampledRateFunction(rate_out);
+  //printStratifiedExpectedReturn(expected_return_out);
+  printExpectedReturnUser(expected_return_out);
   return 0;
 }
 ModelBase::PredictRes UserConstantModel::predict(const User &user){
