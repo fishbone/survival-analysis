@@ -60,6 +60,7 @@ class ConstructFeatureModel : public ModelBase{
     std::unordered_map<long, std::unordered_map<int, bool>> isTestSet;
 
     int num_kernel, history_size, num_feature;
+    double NOW;
 
     std::vector<std::pair<Kernels, double>> kernels; // string : type (exp, exp_7d, exp_24h), double: sigma^2
     std::vector<std::string> kernel_name;

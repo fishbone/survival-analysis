@@ -11,8 +11,11 @@ struct DataPoint{
   SparseVector x;                                                                  
   SparseVector integral_x;                                                         
   double start, end, prev_end, y;                                                   
-  int bin, s_id;                                                                   
-  DataPoint():uid(0),s_id(0),y(0),bin(-1),start(-1),end(0){}                       
+  int bin, s_id;
+  bool isCensored;
+  DataPoint():uid(0),s_id(0),y(0),bin(-1),start(-1),end(-1){
+    isCensored = false;
+  } 
 
   bool operator < (const DataPoint& rhs) const                                     
   {                                                                                

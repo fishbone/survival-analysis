@@ -26,8 +26,6 @@ void UserConstantModel::initParams(){
   cerr <<"=====lr_lambda = "<<lr_lambda<<endl                                      
     <<"=====lr_lambda_u= "<<lr_lambda_u<<endl                                      
     <<"=====momentum = "<<momentum<<endl;
-  // weights for features                                                          
-  //W  = SparseVector::rand_init(num_feature);                                     
 }  
 double UserConstantModel::evalPerp(vector<DataPoint> & data){
   double loglik = 0.0;                                                          
@@ -91,7 +89,11 @@ int UserConstantModel::train(const UserContainer *data){
       DataPoint & _point = train_data[i];
       long uid = _point.uid;                                                         
       double y = _point.y;  
-      double divider = 1.0/(lambda_u[uid] + lambda);
+      double divider = 0.0;
+      bool isCensored = _point.isCensored;
+      if(isCensored == false){
+        divider = 1.0/(lambda_u[uid] + lambda);
+      }
       d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
       d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u *scale *  (y - divider);
       lambda += d_lambda;
