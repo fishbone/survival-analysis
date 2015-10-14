@@ -60,11 +60,11 @@ void ModelBase::printRandomSampledRateFunction(string fname){
     sort(iter->second.begin(), iter->second.end());
     int plot = 0;
     for(int i = 0 ; i < iter->second.size() ; i++){
-      // find a instance whose return time < 24 (just for good plot)
+      // find a instance whose return time < 48 (just for good plot)
       double y = iter->second[i].y;
-      if(y < 24){
-        fout <<y;
-        for(double t = 0.1 ; t <= 25 ; t += 0.05){
+      if(y < 49){
+        fout <<y<<" "<<iter->second[i].prev_end;
+        for(double t = 0.1 ; t <= 49 ; t += 0.05){
           fout << " "<< t <<" "<<predictRateValue(iter->second[i],t);
         }
         fout << endl;
