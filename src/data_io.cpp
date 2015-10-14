@@ -70,6 +70,15 @@ bool stay_handle(std::istream &is,
     dd_id += "_daystatus";
     offset = getFeatureOffset(dd_id);
     sess.session_features.push_back({offset, 1});
+
+    {
+        std::stringstream tmp_ss;
+        tmp_ss<<(int)sess.start.hourOfDay();
+        std::string t_id = tmp_ss.str();
+        t_id += "_timeofday";
+        offset = getFeatureOffset(t_id);
+        sess.session_features.push_back({offset, 1});
+    }
     return true;
 }
 
