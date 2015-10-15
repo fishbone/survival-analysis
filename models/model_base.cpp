@@ -70,13 +70,14 @@ void ModelBase::printRandomSampledRateFunction(string fname){
         fout << endl;
         plot++;
       }
-      if(plot > 20)break;
+      if(plot > 30)break;
     }
   } 
 
 }
 
 void ModelBase::printExpectedReturnUser(std::string fname){
+  cerr <<"================ printExpectedReturnUser !!!" << endl;
   ofstream fout(fname);
   vector<pair<string, string>> segments;                                           
   assert(train_data.size() > 0);
@@ -98,7 +99,12 @@ void ModelBase::printExpectedReturnUser(std::string fname){
     sort(iter->second.begin(), iter->second.end());
   }
   ptime _unix_start(boost::gregorian::date(1970,1,1)); 
-  for(auto p : segments){
+  vector<int> seg_ind;
+  vector<pair<double, double>> expected_true;
+
+#pragma omp parallel for
+  for(int i = 0 ; i < segments.size() ; i++ ){
+    pair<string, string> p = segments[i];
     ptime p1(time_from_string(p.first));
     ptime p2(time_from_string(p.second));
     double start_hours = (p1 - _unix_start).total_seconds()/3600.00;
@@ -111,7 +117,7 @@ void ModelBase::printExpectedReturnUser(std::string fname){
       for(int j = 0 ; j < iter->second.size() ; j++){
         if(iter->second[j].start > start_hours 
             && iter->second[j].start < end_hours){
-          if(j > 0 && iter->second[j-1].end < start_hours){
+          if(j > 0 && iter->second[j-1].end < start_hours && iter->second[j-1].end > 0){
             truth ++;
           }
           break;
@@ -123,21 +129,31 @@ void ModelBase::printExpectedReturnUser(std::string fname){
         }
         found = j;
       }
-        if(found != -1){
-          double prev_end = iter->second[found].end;
-          //DataPoint data(iter->second[found+1]);
-          DataPoint data;
-          data.uid = iter->first;
-          data.s_id = iter->second[found].s_id + 1;
-          data.prev_end = prev_end;
-          double GofEnd = predictGofT(data, end_hours - data.prev_end); 
-          double GofStart = predictGofT(data, start_hours - data.prev_end); 
-          expected += (1 - GofEnd) - (1 - GofStart);
-        }
+      if(found != -1){
+        double prev_end = iter->second[found].end;
+        //DataPoint data(iter->second[found+1]);
+        DataPoint data;
+        data.uid = iter->first;
+        data.s_id = iter->second[found].s_id + 1;
+        data.prev_end = prev_end;
+        double GofEnd = predictGofT(data, end_hours - data.prev_end); 
+        double GofStart = predictGofT(data, start_hours - data.prev_end); 
+        expected += (1 - GofEnd) - (1 - GofStart);
+      }
     }
-      cerr <<p.first<<" - "<<p.second<<endl;
-      cerr <<"expected active users = " <<expected <<" true active users = " << truth<<endl; 
+#pragma omp critical
+    {
+     cerr <<p.first<<" - "<<p.second<<endl;
+     cerr <<"expected active users = " <<expected <<" true active users = " << truth<<endl; 
+     seg_ind.push_back(i);
+     expected_true.push_back(make_pair(expected, truth));
+    }
   }
+  for(int i = 0 ; i < seg_ind.size() ; i++){
+    cerr << segments[seg_ind[i]].first<<"-"<<segments[seg_ind[i]].second<<" ";
+    cerr << expected_true[i].first<<" "<<expected_true[i].second<<" "<<endl;
+  }
+
 }
 void ModelBase::printStratifiedExpectedReturn(std::string fname){
   cerr <<"printStratifiedExpectedReturn..."<<endl;

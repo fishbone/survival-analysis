@@ -150,12 +150,17 @@ int FeatureBasedModel::train(const UserContainer *data){
         cout <<"Training with SGD: " << i<<"/"<<train_data.size()<<endl;
       }
       DataPoint & _point = train_data[i];
+      bool isCensored = _point.isCensored;
       long uid = _point.uid;                                                         
       double y = _point.y;
       SparseVector x = _point.x;
       SparseVector int_x = _point.integral_x;
+      
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
-      double divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda + SparseVector::dotProduct(W,x));
+      double divider = 0.0;
+      if(isCensored == false){
+        divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda + SparseVector::dotProduct(W,x));  
+      }
       d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
       d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);
       for(int b = 0 ; b < bin ; b++){
@@ -163,12 +168,13 @@ int FeatureBasedModel::train(const UserContainer *data){
         lambda_bin[b] += d_lambda_bin[b];
         lambda_bin[b] = max(lambda_bin[b], EPS_LAMBDA);
       }
+      if(isCensored == false){
       d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
         - lr_lambda * scale * ((y - bin*BIN_WIDTH) - divider);
-
-
       lambda_bin[bin] += d_lambda_bin[bin];
       lambda_bin[bin] = max(lambda_bin[bin], EPS_LAMBDA); 
+      }
+     
       lambda += d_lambda;
       lambda_u[uid] += d_lambda_u[uid];
       lambda = max(lambda, EPS_LAMBDA);
@@ -190,8 +196,7 @@ int FeatureBasedModel::train(const UserContainer *data){
   string rate_out = _config["rate_function"].as<string>();
 
   printStratifiedPerp(stratified_out);
-  //printStratifiedExpectedReturn(expected_return_out);
-  printRandomSampledRateFunction(rate_out); 
+  printRandomSampledRateFunction(rate_out);
   printExpectedReturnUser(expected_return_out);
   // evalTrainPerp(data);
   return 0;
@@ -216,7 +221,6 @@ ModelBase::PredictRes FeatureBasedModel::predict(const User &user){
       loglik += log_density - integral_lambda;
       prev_end = test_sessions[i].end.hours();
     }   
-
     return PredictRes(0,
         loglik,
         num_sessions,

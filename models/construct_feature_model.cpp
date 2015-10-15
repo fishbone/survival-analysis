@@ -10,7 +10,12 @@
 #include <utility>
 #include <math.h>
 #include <iostream>
+#include <boost/date_time/gregorian/gregorian.hpp>                                 
+#include <boost/date_time/gregorian/gregorian_types.hpp>                           
+#include <boost/date_time/posix_time/posix_time.hpp>  
 using namespace std;
+using namespace boost;                                                             
+using namespace boost::posix_time;
 const static int LABEL_INDEX = 0;
 double ConstructFeatureModel::predictGofT(DataPoint & data, double t){
   cerr <<"shouldn't call predictGofT for ConstructFeatureModel !!" << endl;
@@ -35,6 +40,11 @@ void ConstructFeatureModel::initParams(){
   num_kernel   = _config["hawkes"]["num_kernel"].as<int>();
   history_size = _config["hawkes"]["history_size"].as<int>();
   num_feature  = _config["hawkes"]["history_size"].as<int>();
+  string now_str = _config["NOW"].as<string>();
+  ptime _unix_start(boost::gregorian::date(1970,1,1)); 
+  ptime p1(time_from_string(now_str));
+  NOW = (p1 - _unix_start).total_seconds()/3600.00; 
+  cerr <<"NOW is set to " << NOW<<endl;
 
   // kernel functions
   int _exp = 0;
@@ -136,10 +146,13 @@ vector<Feature> ConstructFeatureModel::getHawkesFeatureAtTime(long uid,
             <<s_id<<" s[s_id].start = "<<sessions[s_id].start.hours()<<endl;
         }
         assert(sessions[j].start.hours() < _time + 1e-5);
+ //       kernelValue += evalKernel(kernels[k].first, kernels[k].second,
+ //           sessions[j].start.hours(), _time);
         kernelValue += evalKernel(kernels[k].first, kernels[k].second,
-            sessions[j].start.hours(), _time);
+            sessions[j].start.hours(), _time)/(1 + sqrt(s_id - j));
       }
-      vec.push_back(Feature(getFeatureOffset(kernel_name[k]),kernelValue/(sqrt(count_history))));
+//      vec.push_back(Feature(getFeatureOffset(kernel_name[k]),kernelValue/(sqrt(count_history))));
+      vec.push_back(Feature(getFeatureOffset(kernel_name[k]),kernelValue));
     }else {
       double non_his = evalKernel(kernels[k].first, kernels[k].second, 0.0, _time);
       vec.push_back(Feature(getFeatureOffset(kernel_name[k]), non_his) );
@@ -280,6 +293,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
         data.start = start;
         data.end = end;
         data.prev_end = prev_end;
+        assert(data.prev_end > 100);
         data.bin = bin;
         data.y = start - prev_end;
         data.s_id = j;
@@ -300,9 +314,43 @@ void ConstructFeatureModel::buildVectorizedDataset(){
       }
     }
   }
-  cerr <<"finished buildingVetorizedDatset ";
-  cerr <<"#train session = "<< train_data.size()<<" # test_session = "
-    <<test_data.size()<<endl;
+  cerr <<"finished buildingVetorizedDatset start to add censored data " << endl;
+  vector<DataPoint> censored;
+  vector<DataPoint> concat_data(train_data);
+  concat_data.insert(concat_data.end(), test_data.begin(), test_data.end());
+  for(int i = 0 ; i < concat_data.size() ; i++){
+    if(concat_data[i].prev_end < NOW && concat_data[i].start >= NOW){
+      DataPoint data;
+      data.uid = concat_data[i].uid;
+      data.s_id = concat_data[i].s_id;
+      data.prev_end = concat_data[i].prev_end;
+      assert(data.prev_end > 100);
+      data.start = NOW;
+      data.bin = concat_data[i].bin;
+//      data.end = 123456789;//some big number
+      data.y = max(NOW - data.prev_end, BIN_WIDTH + 1e-5);
+      data.isCensored = true;
+      data.integral_x = getIntegralFeatureAtTime(data.uid, data.s_id, NOW);
+      censored.push_back(data);
+    }
+  }
+  cerr <<"finished processing censored data..... start to handle the first data \
+    right after the NOW"  << endl;
+  int cut_test = 0;
+  for(int i = 0 ; i < test_data.size() ; i++){
+    //find the session right after NOW
+    if(test_data[i].prev_end < NOW && test_data[i].start >= NOW) {
+      assert(test_data[i].prev_end > 100);
+      test_data[i].y = test_data[i].start - NOW;
+      test_data[i].prev_end = NOW;
+      cut_test ++;
+    }
+  }
+
+  cerr <<"#train session without censored = "<< train_data.size()<<" "; 
+  train_data.insert(train_data.end(), censored.begin(), censored.end());
+  cerr <<"#train session with session = "<< train_data.size()<<" # test_session = "
+    <<test_data.size()<<" cur_test = " << cut_test<<endl;
 }
 
 void ConstructFeatureModel::buildDataset(){
