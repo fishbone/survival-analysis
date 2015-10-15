@@ -5,8 +5,6 @@
 #include <string>
 #include <iostream>
 boost::shared_mutex rw_lock;
-typedef std::unordered_map<std::string, int> FeatureMap;
-typedef std::unordered_map<int, std::string> MapFeature;
 FeatureMap ffmap;
 MapFeature mmap;
 int getFeatureOffset(std::string &name){
