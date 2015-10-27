@@ -4,6 +4,7 @@
 #include "eval_loglik.h"
 #include "global_constant_model.h"
 #include "adhoc_statistics_model.h"
+#include <vector>
 #include "construct_feature_model.h"
 #include "user_constant_model.h"
 #include "piecewise_constant_model.h"
@@ -90,11 +91,20 @@ void ModelBase::printExpectedReturnUser(std::string fname){
   }
   unordered_map<long, vector<DataPoint>> uidData;
   for(auto data : train_data){
+    if(data.isCensored == true){
+      data.end = data.start;
+      continue;
+    }
     uidData[data.uid].push_back(data);
   }
   for(auto data : test_data){
+    if(data.isCensored == true){
+      data.end = data.start;
+      continue;
+    }
     uidData[data.uid].push_back(data);
   }
+
   for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
     sort(iter->second.begin(), iter->second.end());
   }
@@ -110,6 +120,7 @@ void ModelBase::printExpectedReturnUser(std::string fname){
     double start_hours = (p1 - _unix_start).total_seconds()/3600.00;
     double end_hours = (p2 - _unix_start).total_seconds()/3600.00;
     double expected = 0;
+    double cond_expected = 0;
     int truth = 0;
     int notReturn =0;
     for(auto iter = uidData.begin(); iter != uidData.end(); ++iter){
@@ -138,15 +149,18 @@ void ModelBase::printExpectedReturnUser(std::string fname){
         data.prev_end = prev_end;
         double GofEnd = predictGofT(data, end_hours - data.prev_end); 
         double GofStart = predictGofT(data, start_hours - data.prev_end); 
-        expected += (1 - GofEnd) - (1 - GofStart);
+        //expected += (GofStart - GofEnd)/(1 - GofStart);
+        expected += (GofStart - GofEnd);
+        cond_expected += (GofStart - GofEnd)/(GofStart+1e-8); // 1e-8 just to avoid numerical issue
+//        cerr << "GStart - GofEnd = " << (GofStart - GofEnd) <<"ration = " << (GofStart - GofEnd)/(GofStart) <<endl;
       }
     }
 #pragma omp critical
     {
      cerr <<p.first<<" - "<<p.second<<endl;
-     cerr <<"expected active users = " <<expected <<" true active users = " << truth<<endl; 
+     cerr <<"expected active users = " <<cond_expected <<" true active users = " << truth<<endl; 
      seg_ind.push_back(i);
-     expected_true.push_back(make_pair(expected, truth));
+     expected_true.push_back(make_pair(cond_expected, truth));
     }
   }
   for(int i = 0 ; i < seg_ind.size() ; i++){
@@ -207,7 +221,37 @@ void ModelBase::printStratifiedExpectedReturn(std::string fname){
     }
   }
   cerr << "Accuracy of Prediction = " << correct / test_data.size()<<endl;
-
+}
+void ModelBase::printStratifiedPerpUser(std::string fname){
+  ofstream fout(fname);
+  assert(train_data.size() > 0); 
+  assert(test_data.size() > 0); 
+  unordered_map<long, int> userCount;
+  map<long, vector<DataPoint> > userSession;
+  vector<pair<int, long>> countUid;
+  for(auto data : test_data){
+    userCount[data.uid] ++;
+    userSession[data.uid].push_back(data);
+  }
+  for(auto data : train_data){
+    userCount[data.uid] ++;
+    userSession[data.uid].push_back(data);
+  }
+  for(auto iter = userCount.begin(); iter != userCount.end(); ++ iter){
+    countUid.push_back(make_pair(iter->second, iter->first));
+  }
+  sort(countUid.begin(), countUid.end());
+  vector<DataPoint> V;
+  for(int i = 0 ; i < countUid.size() ; i++){
+    V.insert(V.end(),userSession[countUid[i].second].begin(), userSession[countUid[i].second].end());
+    if( (i+ 1) % 500 == 0){
+    //double avgPerp =  evalPerp(userSession[countUid[i].second]);
+      double avgPerp = evalPerp(V);
+      fout << avgPerp<<endl;  
+      V.clear();
+    }
+//    fout << countUid[i].second <<" "<<countUid[i].first<<" " << avgPerp<<endl; 
+  }
 }
 void ModelBase::printStratifiedPerp(std::string fname){
   cerr <<"printStratifiedPerp..."<<endl;
@@ -232,7 +276,7 @@ void ModelBase::printStratifiedPerp(std::string fname){
   }
   // sort based on frequency default cmp for pair is by first
   sort(countUid.begin(), countUid.end());
-  int num_session_in_bin = test_data.size()/20.0;
+  int num_session_in_bin = test_data.size()/50.0;
   int remain = num_session_in_bin;
   int n_user = countUid.size();
   int bin = 0;
@@ -248,9 +292,9 @@ void ModelBase::printStratifiedPerp(std::string fname){
   for(auto data : test_data){
     userSession[userToBin[data.uid]].push_back(data);
   }
-  for(auto iter = userSession.begin(); iter != userSession.end(); ++ iter){        
-    double avgPerp =  evalPerp(iter->second);
-    fout << iter->first <<"\t" << avgPerp<<endl;
+  for(auto iter = userSession.begin(); iter != userSession.end(); ++ iter){
+      double avgPerp =  evalPerp(iter->second);
+    fout << iter->first<<" "<<avgPerp<< endl;
   } 
 }
 

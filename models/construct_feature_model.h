@@ -36,6 +36,8 @@ class ConstructFeatureModel : public ModelBase{
     
     SparseVector getIntegralFeatureAtTime(long, int, double);
 
+    std::vector<Feature> getIntegralHawkesFeatureAtTime(long, int, double );
+    
     std::vector<DataPoint> & getTrainSet();
 
     std::vector<DataPoint> & getTestSet();
@@ -55,6 +57,8 @@ class ConstructFeatureModel : public ModelBase{
     //#define AUX_FEATUURE 2                                                             
     //#define BOTH_FEATURE 3 
     int feature_type; 
+
+    bool doProduct;
 
     // is the (uid, session) pair from test set ? (we can't use for train))
     std::unordered_map<long, std::unordered_map<int, bool>> isTestSet;
@@ -76,7 +80,6 @@ class ConstructFeatureModel : public ModelBase{
 
     std::vector<Feature> getAuxFeatureAtTime(long, int, double );
 
-    std::vector<Feature> getIntegralHawkesFeatureAtTime(long, int, double );
 
     std::vector<Feature> getIntegralAuxFeatureAtTime(long, int, double );
 

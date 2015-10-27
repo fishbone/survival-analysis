@@ -137,7 +137,8 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   string rate_out = _config["rate_function"].as<string>(); 
   cerr <<"printStratifiedPerp ------" << stratified_out <<endl;
   cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
-  printStratifiedPerp(stratified_out); 
+//  printStratifiedPerp(stratified_out); 
+  printStratifiedPerpUser(stratified_out); 
   printRandomSampledRateFunction(rate_out); 
   printExpectedReturnUser(expected_return_out);
   return 0;

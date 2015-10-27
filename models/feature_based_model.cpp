@@ -6,8 +6,8 @@
 #include <iostream>
 using namespace std;
 double FeatureBasedModel::predictGofT(DataPoint & data, double t){
-  if(t <= 0){
-    return 1.0;
+  if(t < 0){
+    cerr << data.prev_end <<" " << data.start <<" "<<data.end <<" "<<t<<endl;
   }
   assert(t >= 0);
   int bin = min((int)(t/(double)BIN_WIDTH), NUM_BIN - 1);
@@ -20,6 +20,7 @@ double FeatureBasedModel::predictGofT(DataPoint & data, double t){
   }                                  
   integral_lambda += (t - bin * BIN_WIDTH) * lambda_bin[bin];
   SparseVector int_x = this->ctrFeature->getIntegralFeatureAtTime(uid, s_id, data.prev_end + t);;
+ //  this->ctrFeature->getIntegralHawkesFeatureAtTime(uid, s_id, data.prev_end + t);;
   integral_lambda += SparseVector::dotProduct(W,int_x);
   return exp(-integral_lambda); 
 }
@@ -155,7 +156,7 @@ int FeatureBasedModel::train(const UserContainer *data){
       double y = _point.y;
       SparseVector x = _point.x;
       SparseVector int_x = _point.integral_x;
-      
+
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
       double divider = 0.0;
       if(isCensored == false){
@@ -169,12 +170,12 @@ int FeatureBasedModel::train(const UserContainer *data){
         lambda_bin[b] = max(lambda_bin[b], EPS_LAMBDA);
       }
       if(isCensored == false){
-      d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
-        - lr_lambda * scale * ((y - bin*BIN_WIDTH) - divider);
-      lambda_bin[bin] += d_lambda_bin[bin];
-      lambda_bin[bin] = max(lambda_bin[bin], EPS_LAMBDA); 
+        d_lambda_bin[bin] = momentum * d_lambda_bin[bin] 
+          - lr_lambda * scale * ((y - bin*BIN_WIDTH) - divider);
+        lambda_bin[bin] += d_lambda_bin[bin];
+        lambda_bin[bin] = max(lambda_bin[bin], EPS_LAMBDA); 
       }
-     
+
       lambda += d_lambda;
       lambda_u[uid] += d_lambda_u[uid];
       lambda = max(lambda, EPS_LAMBDA);
@@ -195,8 +196,8 @@ int FeatureBasedModel::train(const UserContainer *data){
   string expected_return_out = _config["expected_return_output"].as<string>();
   string rate_out = _config["rate_function"].as<string>();
 
-  printStratifiedPerp(stratified_out);
-  printRandomSampledRateFunction(rate_out);
+//  printStratifiedPerp(stratified_out);
+//  printRandomSampledRateFunction(rate_out);
   printExpectedReturnUser(expected_return_out);
   // evalTrainPerp(data);
   return 0;

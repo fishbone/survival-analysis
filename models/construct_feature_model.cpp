@@ -40,6 +40,8 @@ void ConstructFeatureModel::initParams(){
   num_kernel   = _config["hawkes"]["num_kernel"].as<int>();
   history_size = _config["hawkes"]["history_size"].as<int>();
   num_feature  = _config["hawkes"]["history_size"].as<int>();
+  int product = _config["feature_based"]["product"].as<int>();
+  doProduct = product;
   string now_str = _config["NOW"].as<string>();
   ptime _unix_start(boost::gregorian::date(1970,1,1)); 
   ptime p1(time_from_string(now_str));
@@ -48,6 +50,10 @@ void ConstructFeatureModel::initParams(){
 
   // kernel functions
   int _exp = 0;
+  vector<string> aux_feature_name;
+  for(auto iter = ffmap.begin(); iter != ffmap.end(); ++iter){
+    aux_feature_name.push_back(iter->first);
+  }
   for(int i = 0 ; i < num_kernel ; i+= NUM_KERNEL_TYPE){
     kernels.push_back(make_pair(rbf, pow(2, _exp - 1)));
     kernels.push_back(make_pair(rbf_24h, pow(2, _exp - 1)));
@@ -68,12 +74,21 @@ void ConstructFeatureModel::initParams(){
     getFeatureOffset(kernel_name.back());
     kernel_name.push_back("rbf_night"+ std::to_string(i));
     getFeatureOffset(kernel_name.back());
-    
     _exp++;                                                                        
   }
   cerr <<"using what kernels ? :" <<endl;
   for(int i=0;i<kernel_name.size() ;i++) {
     cerr << kernel_name[i]<<"   ";
+  }
+  cerr <<"product Hawkes feature and auxiliary features ? : "<< doProduct<<endl; 
+  if(doProduct){
+    for(int i = 0 ; i < aux_feature_name.size() ; i++){
+      string aux = aux_feature_name[i];
+      for(int i = 0 ; i < kernel_name.size() ; i++){
+        string concat = aux+"_"+kernel_name[i];
+        getFeatureOffset(concat);
+      }
+    }
   }
   cerr << endl;
   num_kernel = (int)kernels.size();
@@ -98,6 +113,17 @@ SparseVector ConstructFeatureModel::getFeatureAtTime(long uid,
       jointFeature = auxFeature;
       jointFeature.insert(jointFeature.end(),
           hawkesFeature.begin(), hawkesFeature.end());
+      if(this->doProduct == true){
+        // basically Alex's tensor model
+        // we do products on the Hawkes features and Aux features
+        for(int i = 0 ; i < hawkesFeature.size() ; i++){
+          for(int j = 0 ; j < auxFeature.size(); j++){
+            FLOAT val = hawkesFeature[i].second * auxFeature[j].second;
+            string name = hawkesFeature[i].first +"_"+auxFeature[j].first;
+            jointFeature.push_back(Feature(getFeatureOffset(name), val));
+          }
+        }
+      }
       return SparseVector(jointFeature);
     }
   }
@@ -146,9 +172,9 @@ vector<Feature> ConstructFeatureModel::getHawkesFeatureAtTime(long uid,
             <<s_id<<" s[s_id].start = "<<sessions[s_id].start.hours()<<endl;
         }
         assert(sessions[j].start.hours() < _time + 1e-5);
- //       kernelValue += evalKernel(kernels[k].first, kernels[k].second,
+//        kernelValue += evalKernel(kernels[k].first, kernels[k].second,
  //           sessions[j].start.hours(), _time);
-        kernelValue += evalKernel(kernels[k].first, kernels[k].second,
+       kernelValue += evalKernel(kernels[k].first, kernels[k].second,
             sessions[j].start.hours(), _time)/(1 + sqrt(s_id - j));
       }
 //      vec.push_back(Feature(getFeatureOffset(kernel_name[k]),kernelValue/(sqrt(count_history))));
@@ -181,6 +207,16 @@ SparseVector ConstructFeatureModel::getIntegralFeatureAtTime(long uid,
       jointFeature = auxFeature;
       jointFeature.insert(jointFeature.end(),
           hawkesFeature.begin(), hawkesFeature.end());
+      if(doProduct == true){
+
+      for(int i = 0 ; i < hawkesFeature.size() ; i++){
+          for(int j = 0 ; j < auxFeature.size(); j++){
+            FLOAT val = hawkesFeature[i].second * auxFeature[j].second;
+            string name = hawkesFeature[i].first +"_"+auxFeature[j].first;
+            jointFeature.push_back(Feature(getFeatureOffset(name), val));
+        }
+      }
+      }
       return SparseVector(jointFeature);
     }
     assert(false); // shoudn't get here... wrong feature_type ?
@@ -227,6 +263,10 @@ vector<Feature> ConstructFeatureModel::getIntegralHawkesFeatureAtTime(long uid,
   assert(s_id <= (int)sessions.size());
 
   double prev_end = sessions[s_id - 1].end.hours();
+  if(_hours < prev_end){
+    cerr << "uid = "<<uid <<" s_id = "<<s_id <<" hours = "<< _hours<<
+      " prev_end = " << prev_end <<endl;
+  }
   assert(_hours >= prev_end);
   int target_bin = (int)((_hours - prev_end)/(double)BIN_WIDTH) ;
   // get the feature at bin 0 then for b = 1 : target_bin
@@ -281,6 +321,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
         // the "feature" of this session should be the feature of previous session ! (use previous session to predict current sesssion
         double prev_end = all_sessions[j-1].end.hours();
         double start = all_sessions[j].start.hours();
+ //       double start = all_sessions[j].end.seconds();
         double end = all_sessions[j].end.hours();
         assert(_train_data->find(uid) != _train_data->end()); // uid not in training data !?
         assert(prev_end < start);
@@ -333,10 +374,15 @@ void ConstructFeatureModel::buildVectorizedDataset(){
       data.integral_x = getIntegralFeatureAtTime(data.uid, data.s_id, NOW);
       censored.push_back(data);
     }
+    assert(concat_data[i].prev_end > 100 
+        && concat_data[i].start > 0
+        && concat_data[i].end > 0);
   }
+  int cut_test = 0;
+  
   cerr <<"finished processing censored data..... start to handle the first data \
     right after the NOW"  << endl;
-  int cut_test = 0;
+  /*
   for(int i = 0 ; i < test_data.size() ; i++){
     //find the session right after NOW
     if(test_data[i].prev_end < NOW && test_data[i].start >= NOW) {
@@ -344,11 +390,11 @@ void ConstructFeatureModel::buildVectorizedDataset(){
       test_data[i].y = test_data[i].start - NOW;
       test_data[i].prev_end = NOW;
       cut_test ++;
-    }
+    }  
   }
-
+*/
   cerr <<"#train session without censored = "<< train_data.size()<<" "; 
-  train_data.insert(train_data.end(), censored.begin(), censored.end());
+   train_data.insert(train_data.end(), censored.begin(), censored.end());
   cerr <<"#train session with session = "<< train_data.size()<<" # test_session = "
     <<test_data.size()<<" cur_test = " << cut_test<<endl;
 }

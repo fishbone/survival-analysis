@@ -22,5 +22,6 @@ class AdhocStatisticsModel : public ModelBase{
     void sessionLengthHist(std::string fname);
     void userSessionHist(std::string fname);
     void startHourOfDayHist(std::string fname);
+	void writeToFile(std::string f_tr, std::string f_te);
 };
 #endif

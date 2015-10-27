@@ -59,6 +59,8 @@ class ModelBase {
     virtual double evalPerp(std::vector<DataPoint> & ) = 0;
     
     virtual void printStratifiedPerp(std::string );
+    
+    virtual void printStratifiedPerpUser(std::string );
 
     virtual void printStratifiedExpectedReturn(std::string);
 

@@ -2,6 +2,7 @@
 #define __FEATURE_H__
 #include <utility>
 #include <string>
+#include <unordered_map>
 #include "comm.h"
 int getFeatureOffset(std::string &name);
 int getNumberOfFeature();

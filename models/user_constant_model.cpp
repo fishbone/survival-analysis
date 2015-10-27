@@ -37,7 +37,7 @@ double UserConstantModel::evalPerp(vector<DataPoint> & data){
     DataPoint &_point = data[i];                                                
     long uid = _point.uid;
      assert(lambda_u.find(uid) != lambda_u.end()); 
-    double y = _point.y;
+    double y = _point.start - _point.prev_end;
     double _loglik = -y *(lambda_u[uid] + lambda) +log(lambda_u[uid] + lambda);
     perUserCount[uid] ++;                                                       
     perUserLik[uid] += _loglik;                                                 
@@ -66,9 +66,11 @@ int UserConstantModel::train(const UserContainer *data){
       iter != data->end(); ++iter){   
     long uid = iter->first;
     lambda_u[uid] = EPS_LAMBDA;
+    //lambda_u[uid] = 0.0;
     d_lambda_u[uid] = 0.0;
   }
-  lambda = d_lambda = 0;
+  lambda = EPS_LAMBDA;
+  d_lambda = 0;
   double best_test = 2147483647.0;
   double scale = 1.0;
   for(int iter = 1; iter <= max_iter ; iter++){
@@ -88,7 +90,7 @@ int UserConstantModel::train(const UserContainer *data){
       }
       DataPoint & _point = train_data[i];
       long uid = _point.uid;                                                         
-      double y = _point.y;  
+      double y = _point.start - _point.prev_end;  
       double divider = 0.0;
       bool isCensored = _point.isCensored;
       if(isCensored == false){

@@ -54,6 +54,21 @@ void AdhocStatisticsModel::userSessionHist(string fname){
   }
   fout << endl;
 }
+void AdhocStatisticsModel::writeToFile(string f_tr, string f_te){
+  ofstream fout(f_tr);
+  for(auto data : train_data){
+    fout << setprecision(20)<<data.uid <<"\t"<<data.s_id<<"\t"
+		 <<data.isCensored<<"\t"<<data.prev_end <<"\t"
+		 <<data.start<<endl;
+  }
+  fout.close();
+  fout.open(f_te);
+  for(auto data : test_data){
+    fout << setprecision(20)<<data.uid <<"\t"<<data.s_id<<"\t"
+		 <<data.isCensored<<"\t"<<data.prev_end <<"\t"
+		 <<data.start<<endl;
+  }
+}
 int AdhocStatisticsModel::train(const UserContainer *data){
   ConstructFeatureModel ctrFeature(NO_FEATURE);                                    
   ctrFeature.setData(_train_data, _test_data);                                     
@@ -74,7 +89,9 @@ int AdhocStatisticsModel::train(const UserContainer *data){
   userSessionHist(user_session_hist);
   cerr <<"start hour of day..." << endl;
   startHourOfDayHist(start_hour_of_day_hist);
+  writeToFile("train_session.txt", "test_session.txt");
 }
+
 
 const char *AdhocStatisticsModel::modelName(){  
   return "adhoc_statistics_model";
