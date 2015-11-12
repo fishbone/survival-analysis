@@ -101,9 +101,9 @@ int PiecewiseConstantModel::train(const UserContainer *data){
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
       double divider = 0.0;
       bool isCensored = _point.isCensored;
-      if(isCensored == false){
+//      if(isCensored == false){
         divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda);
-      }
+//      }
       double smooth_prev = 0.0;
       //     d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
       //      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);

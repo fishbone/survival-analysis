@@ -20,7 +20,7 @@ struct DataPoint{
   bool operator < (const DataPoint& rhs) const                                     
   {                                                                                
     if(this->uid < rhs.uid) return true;                                           
-    else if(this->uid > rhs.uid) return false;                                     
+    else if(this->uid > rhs.uid) return false;
     return (this->start <= rhs.start);                                             
   }                                                                                
 }; 
