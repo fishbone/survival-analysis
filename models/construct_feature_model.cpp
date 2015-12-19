@@ -409,8 +409,8 @@ void ConstructFeatureModel::buildVectorizedDataset(){
  train_data.insert(train_data.end(), censored.begin(), censored.end());
   cerr <<"#train session with session = "<< train_data.size()<<" # test_session = "
     <<test_data.size()<<" cur_test = " << cut_test<<endl;
-  sort(train_data.begin(), train_data.end());
-  sort(test_data.begin(), test_data.end());
+// sort(train_data.begin(), train_data.end());
+//  sort(test_data.begin(), test_data.end());
   cerr <<"train and test data sorted !! "<<endl;
 }
 

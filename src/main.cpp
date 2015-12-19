@@ -130,7 +130,6 @@ int main(int argc, char *argv[]){
     int cnt = load_lastfm_profile(vm["profile_data_template"].as<std::string>().c_str());
     std::cerr<<"Read profile finished: "<<cnt<<std::endl;
   }
-
   cerr<<"Reading data for training dataset"<<endl;
   read_data(vm["lastfm"].as<bool>(),
 	    vm["loadparam"].as<std::string>(),
@@ -180,6 +179,13 @@ int main(int argc, char *argv[]){
 	    vm["test_start"].as<std::string>().c_str(),
 	    vm["test_end"].as<std::string>().c_str(),
 	    test_data);
+
+  std::cerr<<"All feature"<<std::endl;
+  for(auto i = ffmap.begin(); i != ffmap.end(); ++i){
+    std::cerr<<"Feat "<<i->first<<std::endl;
+  }
+
+
   std::vector<ModelBase*> models;
   load_models(vm["models"].as<std::vector<std::string> >(),
 	      models);
