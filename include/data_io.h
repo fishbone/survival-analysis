@@ -11,4 +11,5 @@ int read_data(bool lastfm,
     const char* end_day,
     UserContainer &data);
 int load_article_information(const char* filename);
+int load_lastfm_profile(const char* filename);
 #endif

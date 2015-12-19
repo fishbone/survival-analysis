@@ -29,14 +29,16 @@ bool stay_handle_lastfm(std::istream &is,
     if(!data.count(uid)){
         data.insert(std::make_pair(uid, User(uid)));
     }
-    //    if(uid == 939){
-    //std::cerr<<uid<<"\t"<<start_time<<"\t"<<end_time<<std::endl;
-    //    }
 
     Session &sess = data[uid].add_session(uid,
                                           start_time,
                                           end_time,
                                           read_date);
+    auto& ref = getArticleCat(uid);
+    for(int i : ref){
+      sess.session_features.push_back({i, 1});
+    }
+
     int offset;
     for(int i = 0; i < arts; ++i){
       std::string str_id;
@@ -186,6 +188,29 @@ bool app_handle(std::istream &s,
     }
 }
 
+// 1       m       Japan
+// 2       f       Peru
+// 3       m       United States
+// 4       f       n
+int load_lastfm_profile(const char* filename){
+  std::ifstream ifs(filename);
+  std::cerr<<"Reading lastfm profile"<<std::endl;
+  long uid;
+  std::string s, c;
+  int cnt = 0;
+  while(ifs){
+    ifs>>uid>>s>>c;
+    if(s != "n"){
+      setArtCat(uid, s + "_sex");
+    }
+    if(c != "n"){
+      setArtCat(uid, c + "_cny");
+    }
+    ++cnt;
+  }
+  return cnt;
+}
+
 bool profile_handle(std::istream &s,
                     UserContainer &data,
                     bool l){
@@ -208,6 +233,7 @@ bool profile_handle(std::istream &s,
         data[uid].add_feature(date, {offset, 1});
     }
 }
+
 
 static int read_data_from_file(
     const char* filename,
@@ -293,23 +319,19 @@ int read_data(bool lastfm,
       
     }
     
-    if(isIn(feature, 'p')){
-        std::cerr<<"Reading profile data"<<std::endl;
-	if(lastfm){
-	  
-	}else{
-	  for(date d = start; d <= end; d = d + inc_date){    
-            std::string cur_date = to_iso_string(d);
-            snprintf(filename,
-                     sizeof(filename),
-                     profile_dirtemp,
-                     cur_date.c_str());
-            count += read_data_from_file(filename,
-                                         data,
-                                         profile_handle,
-                                         isIn(feature, 'p'));
-	  }
-	}
+    if(!lastfm && isIn(feature, 'p')){
+      std::cerr<<"Reading profile data"<<std::endl;
+      for(date d = start; d <= end; d = d + inc_date){    
+	std::string cur_date = to_iso_string(d);
+	snprintf(filename,
+		 sizeof(filename),
+		 profile_dirtemp,
+		 cur_date.c_str());
+	count += read_data_from_file(filename,
+				     data,
+				     profile_handle,
+				     isIn(feature, 'p'));
+      }
     }
 
     if(!lastfm && isIn(feature, 'a')){

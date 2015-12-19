@@ -50,6 +50,7 @@ bool parse_param(int argc, char *argv[], variables_map &vm){
   }
   return true;
 }
+
 void load_evals(const std::vector<std::string> &eval_name,
 		std::vector<EvaluationBase*> &evals){
   for(auto i : eval_name){
@@ -62,6 +63,7 @@ void load_evals(const std::vector<std::string> &eval_name,
     }
   }
 }
+
 void load_models(const std::vector<std::string> &models_name,
 		 std::vector<ModelBase*> &models){
   for(auto i : models_name){
@@ -74,8 +76,8 @@ void load_models(const std::vector<std::string> &models_name,
     }
   }
 }
-void train_models(
-		  UserContainer *data,
+
+void train_models(UserContainer *data,
 		  std::vector<ModelBase*>& models){
   for(auto i : models){
     auto start = time(nullptr);
@@ -85,6 +87,7 @@ void train_models(
     cerr<<"Finish training model: "<<i->modelName()<<" CostTime:"<<(end - start)<<"s"<<endl;
   }
 }
+
 void test_models(
 		 UserContainer *data,
 		 std::vector<ModelBase*> &models,
@@ -121,6 +124,10 @@ int main(int argc, char *argv[]){
     std::cerr<<"Read article category"<<std::endl;
     int cnt = load_article_information(vm["article"].as<std::string>().c_str());
     std::cerr<<"Read article category finished: "<<cnt<<std::endl;
+  }else{
+    std::cerr<<"Read profile"<<std::endl;
+    int cnt = load_lastfm_profile(vm["profile_data_template"].as<std::string>().c_str());
+    std::cerr<<"Read profile finished: "<<cnt<<std::endl;
   }
 
   cerr<<"Reading data for training dataset"<<endl;

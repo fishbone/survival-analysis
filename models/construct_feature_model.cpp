@@ -306,7 +306,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
   {
     int n_user = 0; 
     auto s = time(nullptr);
-// #pragma omp parallel for
+ #pragma omp parallel for
     for(int i = 0 ; i < (int)all_uids.size(); ++i){
       n_user ++;
       if(n_user % 500 == 0){
