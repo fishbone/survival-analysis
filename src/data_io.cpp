@@ -13,6 +13,69 @@
 #include <algorithm>
 typedef bool (*read_handle)(std::istream &is, UserContainer &data, bool l);
 
+// 1	20080109	1199870335	1199872791	7		639027	939178	957722	385049	607918	361210	640514
+// 1	20080109	1199874607	1199878848	10		480941	24897	646083	623254	67779	432876	639027	939178	957722	385049
+bool stay_handle_lastfm(std::istream &is,
+			UserContainer &data,
+			bool l){
+    long uid, start_time, end_time;
+    int arts;
+    char read_date[128];
+    is>>uid>>read_date>>start_time>>end_time>>arts;
+
+    if(is.eof())
+        return true;
+    
+    if(!data.count(uid)){
+        data.insert(std::make_pair(uid, User(uid)));
+    }
+    //    if(uid == 939){
+    //std::cerr<<uid<<"\t"<<start_time<<"\t"<<end_time<<std::endl;
+    //    }
+
+    Session &sess = data[uid].add_session(uid,
+                                          start_time,
+                                          end_time,
+                                          read_date);
+    int offset;
+    for(int i = 0; i < arts; ++i){
+      std::string str_id;
+      is>>str_id;
+      
+      if(l){
+	std::string tmp = str_id + "_read";
+	offset = getFeatureOffset(tmp);
+	sess.session_features.push_back({offset, 1});
+      }
+    }
+
+    int dw = sess.start.dayOfWeek();
+    assert(dw >= 0 && dw <= 6);
+    std::string dw_id;
+    dw_id.push_back(dw + '0');
+    dw_id += "_week";
+    offset = getFeatureOffset(dw_id);
+    sess.session_features.push_back({offset, 1});
+
+    int dd = (int)(sess.start.hourOfDay() / 6.0);
+    assert(dd >= 0 && dd <= 3);
+    std::string dd_id;
+    dd_id.push_back(dd + '0');
+    dd_id += "_daystatus";
+    offset = getFeatureOffset(dd_id);
+    sess.session_features.push_back({offset, 1});
+
+    {
+        std::stringstream tmp_ss;
+        tmp_ss<<(int)sess.start.hourOfDay();
+        std::string t_id = tmp_ss.str();
+        t_id += "_timeofday";
+        offset = getFeatureOffset(t_id);
+        sess.session_features.push_back({offset, 1});
+    }
+    return true;
+}
+
 /*
   4612525700	20150628	1435644003	1435645012	4	133961	35
   4612525700	20150628	1435670188	1435670188	0
@@ -200,7 +263,7 @@ int load_article_information(const char* filename){
     return cnt;
 }
 
-int read_data(
+int read_data(bool lastfm,
     std::string feature,
     const char* stay_dirtemp,
     const char* app_dirtemp,
@@ -218,19 +281,24 @@ int read_data(
     char filename[256];
     std::cerr<<"Reading stay data"<<std::endl;
     for(date d = start; d <= end; d = d + inc_date){    
-        std::string cur_date = to_iso_string(d);
-        snprintf(filename,
-                 sizeof(filename),
-                 stay_dirtemp,
-                 cur_date.c_str());
-        count += read_data_from_file(filename,
-                                     data,
-                                     stay_handle,
-                                     isIn(feature, 'd'));
+      std::string cur_date = to_iso_string(d);
+      snprintf(filename,
+      	       sizeof(filename),
+      	       stay_dirtemp,
+      	       cur_date.c_str());
+      count += read_data_from_file(filename,
+      				   data,
+      				   lastfm ? stay_handle_lastfm : stay_handle,
+      				   isIn(feature, 'd'));
+      
     }
+    
     if(isIn(feature, 'p')){
         std::cerr<<"Reading profile data"<<std::endl;
-        for(date d = start; d <= end; d = d + inc_date){    
+	if(lastfm){
+	  
+	}else{
+	  for(date d = start; d <= end; d = d + inc_date){    
             std::string cur_date = to_iso_string(d);
             snprintf(filename,
                      sizeof(filename),
@@ -240,10 +308,11 @@ int read_data(
                                          data,
                                          profile_handle,
                                          isIn(feature, 'p'));
-        }
+	  }
+	}
     }
 
-    if(isIn(feature, 'a')){
+    if(!lastfm && isIn(feature, 'a')){
         std::cerr<<"Reading app data"<<std::endl;
         for(date d = start; d <= end; d = d + inc_date){    
             std::string cur_date = to_iso_string(d);

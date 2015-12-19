@@ -306,7 +306,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
   {
     int n_user = 0; 
     auto s = time(nullptr);
-#pragma omp parallel for
+// #pragma omp parallel for
     for(int i = 0 ; i < (int)all_uids.size(); ++i){
       n_user ++;
       if(n_user % 500 == 0){
@@ -317,6 +317,15 @@ void ConstructFeatureModel::buildVectorizedDataset(){
       long uid = all_uids[i];
       User &user = (*_concat_data)[uid];
       const vector<Session> &all_sessions = user.get_sessions();
+
+      // if(uid == 939){
+      // 	for(int j = 0; j < all_sessions.size(); ++j){
+      // 	  // Wrong!!!!
+      // 	  std::cerr<<"J="<<j<<"\tId="<<uid<<"\tStart="<<all_sessions[j].start.seconds()
+      // 		   <<"\tEnd="<<all_sessions[j].end.seconds()<<std::endl;
+      // 	}
+      // }
+
       for(int j = 1 ; j < (int)all_sessions.size(); j++){
         // the "feature" of this session should be the feature of previous session ! (use previous session to predict current sesssion
         double prev_end = all_sessions[j-1].end.hours();
@@ -324,6 +333,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
  //       double start = all_sessions[j].end.seconds();
         double end = all_sessions[j].end.hours();
         assert(_train_data->find(uid) != _train_data->end()); // uid not in training data !?
+
         assert(prev_end < start);
         //int bin = min((int)((start - prev_end)/(double)BIN_WIDTH), NUM_BIN - 1);
         int bin = (int)((start - prev_end)/(double)BIN_WIDTH);
@@ -401,6 +411,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
     <<test_data.size()<<" cur_test = " << cut_test<<endl;
   sort(train_data.begin(), train_data.end());
   sort(test_data.begin(), test_data.end());
+  cerr <<"train and test data sorted !! "<<endl;
 }
 
 void ConstructFeatureModel::buildDataset(){

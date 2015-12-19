@@ -2,7 +2,7 @@
 #define __DATA_IO_H__
 #include <vector>
 #include "user.h"
-int read_data(
+int read_data(bool lastfm,
     std::string feature,
     const char* stay_dirtemp,
     const char* app_dirtemp,
