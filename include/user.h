@@ -15,6 +15,9 @@ struct Time {
     Time(long t){
         setTime(t);
     }
+  boost::gregorian::date date() const{
+    return _time.date();
+  }
     int dayOfYear() const {
         return _time.date().day_of_year();
     }

@@ -31,6 +31,7 @@ bool parse_param(int argc, char *argv[], variables_map &vm){
     ("loadparam", value<std::string>()->required(), "The params to be loaded")
     ("article", value<std::string>()->required(), "article category")
     ("lastfm", value<bool>()->default_value(false), "Is it last fm")
+    ("dump", value<std::string>()->default_value(""), "Dump data")
     ("help", "produce help message");
     
   try{
@@ -139,6 +140,33 @@ int main(int argc, char *argv[]){
 	    vm["train_start"].as<std::string>().c_str(),
 	    vm["train_end"].as<std::string>().c_str(),
 	    train_data);
+
+  if(vm["dump"].as<std::string>().size() != 0){
+    ofstream ofs(vm["dump"].as<std::string>().c_str());
+    // Just dump training data
+    for(auto i = train_data.begin();
+	i != train_data.end();
+	++i){
+      auto &u = i->second;
+      auto &sess = u.get_sessions();
+      for(auto &s : sess){
+	auto d = s.start.date();
+	ofs<<d.year()<<std::setfill('0')<<std::setw(2)<<(int)d.month()<<
+	  std::setfill('0')<<std::setw(2)<<
+	  d.day()<<"\t";
+	ofs<<u.id()<<"\t";
+	char buffer[256];
+	sprintf(buffer, "%f\t%f", s.start.hours(), s.end.hours());
+	ofs<<buffer;
+	for(auto &f : s.session_features){
+	  ofs<<"\t"<<f.first<<"\t"<<f.second;
+	}
+	ofs<<std::endl;
+      }
+    }
+    ofs.close();
+    return 0;
+  }
 
 
   UserContainer test_data;

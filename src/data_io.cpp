@@ -8,6 +8,7 @@
 #include <chrono>
 #include <ctime>
 #include <iostream>
+#include <set>
 #include <sstream>
 #include <fstream>
 #include <algorithm>
@@ -39,17 +40,30 @@ bool stay_handle_lastfm(std::istream &is,
       sess.session_features.push_back({i, 1});
     }
 
+    std::set<long> adup;
+    std::set<std::string> sdup;
     int offset;
     for(int i = 0; i < arts; ++i){
       std::string str_id;
-      is>>str_id;
-      
+      long aid;
+      is>>str_id>>aid;
+      adup.insert(aid);
+      sdup.insert(str_id);
       if(l){
 	std::string tmp = str_id + "_read";
 	offset = getFeatureOffset(tmp);
 	sess.session_features.push_back({offset, 1});
       }
     }
+    
+    offset = getFeatureOffset("unique_song");
+    sess.session_features.push_back({offset, log(1.0+ sdup.size())});
+
+    offset = getFeatureOffset("unique_artist");
+    sess.session_features.push_back({offset, log(1.0 + adup.size())});
+
+    offset = getFeatureOffset("song_num");
+    sess.session_features.push_back({offset, log(1.0 + arts)});
 
     int dw = sess.start.dayOfWeek();
     assert(dw >= 0 && dw <= 6);

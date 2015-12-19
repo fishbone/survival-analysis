@@ -1,10 +1,10 @@
 {
   "lr_w": 5e-9,
-    "lr_lambda": 1e-07,
-    "lr_lambda_u":1e-06,
+    "lr_lambda": 5e-08,
+    "lr_lambda_u":5e-07,
     "NOW" : "2015-08-16 00:00:00", 
     "momentum": 0.8,
-    "max_iter": 19,
+    "max_iter": 50,
     "l1_pen" : 0.0,
     "l2_pen" : 0,
     "NUM_BIN": 512,
@@ -44,7 +44,7 @@
       "history_size": 2048
     },
     "feature_based": {
-      "feature_type" : "BOTH_FEATURE",
+      "feature_type" : "AUX_FEATURE",
       "product" : 0
     },
     "construct_feature":{
