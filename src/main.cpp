@@ -15,7 +15,6 @@ void print_help(boost::program_options::options_description &desc){
     cerr<<desc<<endl;
 }
 
-
 bool parse_param(int argc, char *argv[], variables_map &vm){
     options_description desc("Options");
     desc.add_options()
@@ -30,6 +29,7 @@ bool parse_param(int argc, char *argv[], variables_map &vm){
             ("app_data_template", value<std::string>()->required(), "The template of the directory for the app data")
             ("config", value<std::string>()->required(), "The configure file for parameters of the model")
             ("loadparam", value<std::string>()->required(), "The params to be loaded")
+            ("article", value<std::string>()->required(), "article category")
             ("help", "produce help message");
     
     try{
@@ -116,6 +116,12 @@ int main(int argc, char *argv[]){
     cerr<<"NUM_BIN="<<NUM_BIN<<endl;
     UserContainer train_data;
     train_data.reserve(10000000);
+    {
+        std::cerr<<"Read article category"<<std::endl;
+        int cnt = load_article_information(vm["article"].as<std::string>().c_str());
+        std::cerr<<"Read article category finished: "<<cnt<<std::endl;
+    }
+
     cerr<<"Reading data for training dataset"<<endl;
     read_data(
         vm["loadparam"].as<std::string>(),

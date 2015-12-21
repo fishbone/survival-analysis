@@ -10,4 +10,5 @@ int read_data(
     const char* start_day,
     const char* end_day,
     UserContainer &data);
+int load_article_information(const char* filename);
 #endif
