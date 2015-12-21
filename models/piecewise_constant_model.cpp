@@ -50,7 +50,7 @@ double PiecewiseConstantModel::evalPerp(vector<DataPoint> & data){
     double y = _point.y;
     int bin = min(NUM_BIN-1, (int)(y/(double)BIN_WIDTH));
     assert(y >= bin * BIN_WIDTH);
-
+	
     double _loglik = log(predictRateValue(_point, y)) + log(predictGofT(_point, y));
     perUserCount[uid] ++;                                                       
     perUserLik[uid] += _loglik; 
@@ -137,8 +137,8 @@ int PiecewiseConstantModel::train(const UserContainer *data){
   string rate_out = _config["rate_function"].as<string>(); 
   cerr <<"printStratifiedPerp ------" << stratified_out <<endl;
   cerr <<"printExpectedReturn output to "<<expected_return_out << endl;
-//  printStratifiedPerp(stratified_out); 
-  printStratifiedPerpUser(stratified_out); 
+  printStratifiedPerp(stratified_out); 
+//  printStratifiedPerpUser(stratified_out); 
   printRandomSampledRateFunction(rate_out); 
   printExpectedReturnUser(expected_return_out);
   return 0;

@@ -1,0 +1,21 @@
+{
+  "hawkes":{                                                                       
+    "lr_lambda": 0.0005,                                                           
+      "lr_alpha": 0.00000001,                                                      
+      "num_kernel": 30,                                                            
+      "history_size": 20                                                           
+  }, 
+    "construct_feature":{
+      "output_path" : "./None",
+      "cache_path" : "./cache_feature_subset,
+      "read_cache" : 1
+    },
+    "feature_based":{
+      "lr_w": 0.00000001,
+      "lr_lambda": 0.001,
+      "momentum": 0.7,
+      "max_iter": 50,
+      "l1_pen" : 0.000000000,
+      "l2_pen" : 0.00
+    }
+}

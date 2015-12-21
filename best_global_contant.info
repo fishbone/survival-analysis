@@ -1,0 +1,20 @@
+{
+  "lr_w": 1e-7,
+    "lr_lambda": 1e-6,
+    "lr_lambda_u": 0.0,
+    "momentum": 0.7,
+    "max_iter": 100,
+    "l1_pen" : 0.0,
+    "l2_pen" : 0,
+    "NUM_BIN": 72,
+    "BIN_WIDTH": 0.5,
+    "hawkes":{
+      "lr_lambda": 0.000,
+      "lr_alpha": 0.0000000,
+      "num_kernel": 30,
+      "history_size": 5
+    },
+    "construct_feature":{
+      "output_path" : "./hawkes_feature"
+    }
+}

@@ -276,7 +276,7 @@ void ModelBase::printStratifiedPerp(std::string fname){
   }
   // sort based on frequency default cmp for pair is by first
   sort(countUid.begin(), countUid.end());
-  int num_session_in_bin = test_data.size()/50.0;
+  int num_session_in_bin = test_data.size()/20.0;
   int remain = num_session_in_bin;
   int n_user = countUid.size();
   int bin = 0;

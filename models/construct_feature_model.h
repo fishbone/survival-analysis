@@ -31,6 +31,8 @@ class ConstructFeatureModel : public ModelBase{
     }
 
     void buildDataset();
+
+    void normalizeFeature(std::vector<DataPoint>&);
     
     SparseVector getFeatureAtTime(long, int, double);
     

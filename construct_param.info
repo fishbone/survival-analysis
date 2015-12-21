@@ -1,7 +1,7 @@
 {
-  "lr_w": 5e-7,
-    "lr_lambda": 5e-8,
-    "lr_lambda_u":0.0,
+  "lr_w": 5e-8,
+    "lr_lambda": 5e-9,
+    "lr_lambda_u":5e-7,
     "momentum": 0.8,
     "max_iter": 50,
     "NOW" : "2015-08-16 00:00:00",
@@ -9,8 +9,8 @@
     "l2_pen" : 0,
     "NUM_BIN": 1024,
     "BIN_WIDTH": 0.25,
-    "stratified_output" : "hawkes_stratified_paper_100.txt",    
-    "expected_return_output" : "hawkes_expected_paper_temp.txt",
+    "stratified_output" : "__",    
+    "expected_return_output" : "__",
     "rate_function" : "hawkes_rate_function_paper_temp.txt",
     "segments" :{                                                                  
       "n_segments" : 6,  
@@ -36,8 +36,8 @@
       "product" : 0
     },
     "construct_feature":{
-      "output_path" : "./hawkes_feature",
-      "dump" : 0,
-      "normalizel2" : 1
+      "output_path" : "./toutiao_train_0601_0815",
+      "dump" : 1, 
+      "normalizel2" : 1    
     }
 }

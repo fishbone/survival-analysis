@@ -1,0 +1,11 @@
+{
+  "hawkes":{
+      "num_kernel": 30,
+      "history_size": 20
+  },
+    "construct_feature":{
+      "output_path" : "./cache_feature_subset",
+      "cache_path" : "./cache_feature_subset",
+      "read_cache" : 0
+    }
+}

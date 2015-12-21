@@ -1,0 +1,44 @@
+{
+  "lr_lambda": 5e-7,
+    "lr_lambda_u": 0.0,
+    "feature_type" : "NO_FEATURE",
+    "NOW" : "2015-08-16 00:00:00",
+    "momentum": 0.8,
+    "max_iter": 50,
+    "l1_pen" : 0.0,
+    "l2_pen" : 0,
+    "smooth_regularization": 0,
+    "NUM_BIN": 1024,
+    "BIN_WIDTH": 0.25,
+    "stratified_output" : "toutiao_piece_stratified_paper.txt", 
+    "expected_return_output" : "toutiao_piece_expected_return_paper.txt",
+    "rate_function" : "toutiao_piece_rate_function_paper.txt",
+    "segments" :{
+      "n_segments" : 3,
+      "s1" : "2015-08-16 06:00:00",                                                
+      "e1" : "2015-08-16 10:00:00",                                                
+      "s2" : "2015-08-17 14:00:00",                                                
+      "e2" : "2015-08-17 18:00:00", 
+      "s3" : "2015-08-18 00:00:00",                                                
+      "e3" : "2015-08-18 06:00:00", 
+      "s4" : "2015-08-16 18:00:00",                                                
+      "e4" : "2015-08-16 22:00:00", 
+      "s5" : "2015-08-16 22:00:00",                                                
+      "e5" : "2015-08-17 02:00:00", 
+      "s6" : "2015-08-17 02:00:00",                                                
+      "e6" : "2015-08-17 06:00:00" 
+    }, 
+    "feature_based":{
+      "product" : 0
+    },
+    "hawkes":{
+      "num_kernel": 30,
+      "history_size": 5
+    },
+    "construct_feature":{
+      "output_path" : "./hawkes_feature",
+	  "dump" : 0,
+	  "normalizel2" : 0,
+      "filter" : 8640
+    }
+}

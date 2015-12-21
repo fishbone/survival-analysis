@@ -1,0 +1,45 @@
+{
+  "lr_w": 0.0,
+    "lr_lambda": 5e-9,
+    "lr_lambda_u": 0.0,
+    "momentum": 0.8,
+    "max_iter": 50,
+    "l1_pen" : 0.0,
+    "l2_pen" : 0,
+    "NOW" : "2009-01-01 00:00:00",  
+    "NUM_BIN": 72,
+    "BIN_WIDTH": 0.5,
+    "stratified_output" : "lastfm_user_constant_strtified_paper.txt",
+    "expected_return_output" : "lastfm_user_constant_expected_return_paper.txt",
+    "rate_function" : "lastfm_user_constant_rate_function_paper.txt",
+    "segments" :{                                                               
+      "n_segments" : 0,                                                         
+      "s1" : "2015-08-16 06:00:00",                                                
+      "e1" : "2015-08-16 10:00:00",                                                
+      "s2" : "2015-08-16 10:00:00",                                                
+      "e2" : "2015-08-16 14:00:00",                                             
+      "s3" : "2015-08-16 14:00:00",                                                
+      "e3" : "2015-08-16 18:00:00",                                             
+      "s4" : "2015-08-16 18:00:00",                                             
+      "e4" : "2015-08-16 22:00:00",                                             
+      "s5" : "2015-08-16 22:00:00",                                             
+      "e5" : "2015-08-17 02:00:00",                                             
+      "s6" : "2015-08-17 02:00:00",                                             
+      "e6" : "2015-08-17 06:00:00"                                              
+    },
+    "hawkes":{
+      "lr_lambda": 0.000,
+      "lr_alpha": 0.0000000,
+      "num_kernel": 30,
+      "history_size": 5
+    },
+    "feature_based" : {
+      "product": 0
+    },
+    "construct_feature":{
+      "output_path" : "./hawkes_feature",
+      "dump" : 0,
+      "normalizel2" : 0,
+      "filter" : 8640
+    }
+}

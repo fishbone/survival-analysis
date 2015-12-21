@@ -440,6 +440,28 @@ void ConstructFeatureModel::buildDataset(){
   }
   cerr <<"buildVectorizedDataset"<<endl;
   buildVectorizedDataset();
+  if(_config["construct_feature"]["normalizel2"].as<int>() == 1){
+    cerr <<"normalize features by unit norm !"<<endl;
+    normalizeFeature(train_data);
+    normalizeFeature(test_data);
+  }
+  if(_config["construct_feature"]["filter"].as<double>() > 0){
+		vector<DataPoint> _data;
+		float filter = _config["construct_feature"]["filter"].as<double>();
+		for(auto &data : train_data){
+		  if (data.y < filter){ // 8640 = 24 * 30 * 12 = 1 year
+			_data.push_back(data);
+		  }
+		}
+		train_data = _data;
+		_data.clear();
+		for(auto &data : test_data){
+		  if (data.y < filter){ // 8640 = 24 * 30 * 12 = 1 year
+			_data.push_back(data);
+		  }
+		}
+		test_data = _data;
+  }
   if(_config["construct_feature"]["dump"].as<int>() == 1){
           cerr <<"dump data.... size(train) = "<< train_data.size()<<" size(test) = "<<test_data.size()<<endl;
   //it's more convenient to compute hawkes features
@@ -447,7 +469,20 @@ void ConstructFeatureModel::buildDataset(){
   exit(1);
   }
 }
-
+void ConstructFeatureModel::normalizeFeature(vector<DataPoint>& Data){
+    for(auto &data : Data){
+      double sum = 0.0;
+        for(auto iter = data.x.begin(); iter != data.x.end(); ++iter){
+            sum += iter->second * iter->second;
+        }
+        sum = sqrt(sum);
+        if(sum != 0 ){
+            for(auto iter = data.x.begin(); iter != data.x.end(); ++iter){
+                data.x.insert(iter->first, iter->second/sum);
+            }
+        }
+    }
+}
 int ConstructFeatureModel::train(const UserContainer *data){
   this->initParams();
   this->buildDataset();
@@ -472,6 +507,8 @@ void ConstructFeatureModel::writeToFile(string path){
   sort(test_data.begin(), test_data.end());
   ftr.open(path + "train.txt");
   fte.open(path + "test.txt");
+  ftr << std::setprecision(14);
+  fte << std::setprecision(14);
   for(auto data : train_data){
     ftr << data.uid << "\t"<<data.prev_end <<"\t"<<data.start<<"\t"<<data.isCensored;
     for(auto iter = data.x.begin(); iter != data.x.end(); ++iter){
