@@ -7,7 +7,17 @@
 boost::shared_mutex rw_lock;
 FeatureMap ffmap;
 MapFeature mmap;
-int getFeatureOffset(std::string &name){
+std::unordered_map<long, std::vector<int> > art_cat;
+
+std::vector<int> &getArticleCat(long aid){
+    return art_cat[aid];
+}
+
+void setArtCat(long aid, const std::string& cat){
+    art_cat[aid].push_back(getFeatureOffset(cat));
+}
+
+int getFeatureOffset(const std::string &name){
     //    {
     //        boost::shared_lock<boost::shared_mutex> lock(rw_lock);
         if(ffmap.count(name))

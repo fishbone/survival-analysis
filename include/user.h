@@ -8,6 +8,7 @@
 #include <boost/date_time/gregorian/gregorian.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
+
 struct Time {
   public:
     Time(){}
@@ -40,6 +41,7 @@ struct Time {
     long seconds() const{
         return (_time - _time_t_epoch).total_seconds();
     }
+
   private:
     boost::posix_time::ptime _time;
     static const boost::posix_time::ptime _time_t_epoch;

@@ -14,7 +14,7 @@
 typedef bool (*read_handle)(std::istream &is, UserContainer &data, bool l);
 
 /*
-  4612525700	20150628	1435644003	1435645012	4	133961	35	146017	528	306609	34	423517	81
+  4612525700	20150628	1435644003	1435645012	4	133961	35
   4612525700	20150628	1435670188	1435670188	0
 */
 bool stay_handle(std::istream &is,
@@ -40,11 +40,19 @@ bool stay_handle(std::istream &is,
                                           start_time,
                                           end_time,
                                           read_date);
+    std::map<int, int> art_cnt;
     int offset;
     for(int i = 0; i < arts; ++i){
         std::string str_id;
         int stay;
         is>>str_id>>stay;
+
+        long aid = atol(str_id.c_str());
+        std::vector<int> &ref = getArticleCat(aid);
+        for(int i : ref){
+            art_cnt[i]++;
+        }
+        
         if(l){
             std::string tmp = str_id + "_read";
             offset = getFeatureOffset(tmp);
@@ -54,6 +62,13 @@ bool stay_handle(std::istream &is,
             sess.session_features.push_back({offset, stay/(double)3600.0}); // stay in hours
         }
     }
+    // Put the article category into the feature
+    {
+        for(auto ite = art_cnt.begin(); ite != art_cnt.end(); ++ite){
+            sess.session_features.push_back({ite->first, (double)ite->second});
+        }
+    }
+
     int dw = sess.start.dayOfWeek();
     assert(dw >= 0 && dw <= 6);
     std::string dw_id;
@@ -61,7 +76,6 @@ bool stay_handle(std::istream &is,
     dw_id += "_week";
     offset = getFeatureOffset(dw_id);
     sess.session_features.push_back({offset, 1});
-
 
     int dd = (int)(sess.start.hourOfDay() / 6.0);
     assert(dd >= 0 && dd <= 3);
@@ -79,6 +93,7 @@ bool stay_handle(std::istream &is,
         offset = getFeatureOffset(t_id);
         sess.session_features.push_back({offset, 1});
     }
+
     return true;
 }
 
@@ -131,7 +146,6 @@ bool profile_handle(std::istream &s,
     }
 }
 
-
 static int read_data_from_file(
     const char* filename,
     UserContainer &data,
@@ -156,6 +170,7 @@ static int read_data_from_file(
 
     return 0;
 }
+
 bool isIn(std::string &s, char c){
     for(auto x : s){
         if(x == c)
@@ -163,6 +178,28 @@ bool isIn(std::string &s, char c){
     }
     return false;
 }
+
+int load_article_information(const char* filename){
+    std::ifstream ifs(filename);
+    
+    long aid;
+    int cnt = 0;
+    while(ifs){
+        if(cnt % 1000 == 0)
+            std::cerr<<"Num: "<<cnt<<"\r";
+        int n;
+        ifs>>aid>>n;
+        ++cnt;
+        for(int i = 0; i != n; ++i){
+            std::string c;
+            ifs>>c;
+            setArtCat(aid, c);
+        }
+    }
+    std::cerr<<std::endl;
+    return cnt;
+}
+
 int read_data(
     std::string feature,
     const char* stay_dirtemp,
@@ -179,7 +216,6 @@ int read_data(
     date_duration inc_date(1);
     int count = 0;
     char filename[256];
-
     std::cerr<<"Reading stay data"<<std::endl;
     for(date d = start; d <= end; d = d + inc_date){    
         std::string cur_date = to_iso_string(d);
