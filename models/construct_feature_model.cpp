@@ -356,9 +356,11 @@ void ConstructFeatureModel::buildVectorizedDataset(){
     }
   }
   cerr <<"finished buildingVetorizedDatset start to add censored data " << endl;
+  
   vector<DataPoint> censored;
   vector<DataPoint> concat_data(train_data);
   concat_data.insert(concat_data.end(), test_data.begin(), test_data.end());
+
   for(int i = 0 ; i < concat_data.size() ; i++){
     if(concat_data[i].prev_end < NOW && concat_data[i].start >= NOW){
       DataPoint data;
@@ -394,7 +396,7 @@ void ConstructFeatureModel::buildVectorizedDataset(){
   }
 */
   cerr <<"#train session without censored = "<< train_data.size()<<" "; 
-   train_data.insert(train_data.end(), censored.begin(), censored.end());
+ train_data.insert(train_data.end(), censored.begin(), censored.end());
   cerr <<"#train session with session = "<< train_data.size()<<" # test_session = "
     <<test_data.size()<<" cur_test = " << cut_test<<endl;
   sort(train_data.begin(), train_data.end());
@@ -413,8 +415,7 @@ void ConstructFeatureModel::buildDataset(){
   cerr <<"exclude user with less than 1 session in the training set !!! " <<endl;
   for(auto iter = _test_data->begin(); iter != _test_data->end(); ++iter){
     long uid = iter->first;
-    if(_concat_data->find(uid) == _concat_data->end()
-        || _concat_data->at(uid).get_sessions().size() < 1){
+	if(_concat_data->find(uid) == _concat_data->end()){
       continue;
     }
     isTestSet[uid] = unordered_map<int, bool>();
