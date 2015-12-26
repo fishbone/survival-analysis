@@ -53,12 +53,12 @@ double PiecewiseConstantModel::evalPerp(vector<DataPoint> & data){
 
     double _loglik = log(predictRateValue(_point, y)) + log(predictGofT(_point, y));
     perUserCount[uid] ++;                                                       
-    perUserLik[uid] += _loglik;                                                 
+    perUserLik[uid] += _loglik; 
   }                                                                             
   for(auto iter : perUserCount){                                                
     loglik += perUserLik[iter.first]/iter.second;
     sum_loglik += perUserLik[iter.first];
-  }                                                                             
+  } 
   //cout << "evaluated_user = "<< perUserCount.size()<<endl;
   return exp(-sum_loglik/n_session);       
   // return -loglik/perUserCount.size();
@@ -101,9 +101,9 @@ int PiecewiseConstantModel::train(const UserContainer *data){
       int bin = min(NUM_BIN-1,(int)(y/(double)BIN_WIDTH));
       double divider = 0.0;
       bool isCensored = _point.isCensored;
-//      if(isCensored == false){
+      if(isCensored == false){
         divider = 1.0/(lambda_bin[bin] + lambda_u[uid] + lambda);
-//      }
+      }
       double smooth_prev = 0.0;
       //     d_lambda = momentum * d_lambda - lr_lambda  * scale * (y - divider);
       //      d_lambda_u[uid] = momentum * d_lambda_u[uid] - lr_lambda_u * scale * (y - divider);

@@ -160,6 +160,9 @@ int main(int argc, char *argv[]){
 	for(auto &f : s.session_features){
 	  ofs<<"\t"<<f.first<<"\t"<<f.second;
 	}
+	for(auto &f : *s.day_features){
+	  ofs<<"\t"<<f.first<<"\t"<<f.second;
+	}
 	ofs<<std::endl;
       }
     }

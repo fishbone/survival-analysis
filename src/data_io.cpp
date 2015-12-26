@@ -64,7 +64,6 @@ bool stay_handle_lastfm(std::istream &is,
 
     offset = getFeatureOffset("song_num");
     sess.session_features.push_back({offset, log(1.0 + arts)});
-
     int dw = sess.start.dayOfWeek();
     assert(dw >= 0 && dw <= 6);
     std::string dw_id;
